@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>TaskList</title>
+</head>
+
+<body>
+    <h1>TaskList</h1>
+
+    <h2>新しいタスクを追加</h2>
+    <form th:action="@{/tasks}" th:object="${taskForm}" method="post">
+        <input type="text" th:field="*{title}">
+        <button type="submit">追加</button>
+    </form>
+
+    <h2>タスク一覧</h2>
+    <ul>
+        <li th:each="task : ${tasks}" th:text="${task.title}"></li>
+    </ul>
+</body>
+
+</html>
