@@ -1,8 +1,8 @@
-package com.example.tasklist.repository;
+package com.mkunori.tasklist.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.example.tasklist.entity.Task;
+import com.mkunori.tasklist.entity.Task;
 
 /**
  * Task エンティティを操作するリポジトリです。

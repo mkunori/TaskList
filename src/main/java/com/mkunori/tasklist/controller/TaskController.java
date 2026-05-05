@@ -1,4 +1,4 @@
-package com.example.tasklist.controller;
+package com.mkunori.tasklist.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.example.tasklist.entity.Task;
-import com.example.tasklist.form.TaskForm;
-import com.example.tasklist.repository.TaskRepository;
+import com.mkunori.tasklist.entity.Task;
+import com.mkunori.tasklist.form.TaskForm;
+import com.mkunori.tasklist.repository.TaskRepository;
 
 /**
  * タスク一覧画面の表示と、タスク追加を担当するコントローラです。

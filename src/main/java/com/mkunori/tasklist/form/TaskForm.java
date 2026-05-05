@@ -1,4 +1,4 @@
-package com.example.tasklist.form;
+package com.mkunori.tasklist.form;
 
 /**
  * タスク追加フォームの入力値を受け取るクラスです。

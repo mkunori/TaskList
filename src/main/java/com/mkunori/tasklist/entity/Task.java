@@ -1,4 +1,4 @@
-package com.example.tasklist.entity;
+package com.mkunori.tasklist.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
