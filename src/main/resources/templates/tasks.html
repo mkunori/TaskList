@@ -21,6 +21,13 @@
             入力された文字列は、ControllerのTaskFormに入ります。
         -->
         <input type="text" th:field="*{title}">
+
+        <!--
+            titleに入力エラーがある場合だけ、エラーメッセージを表示します。
+            #fields.hasErrors('title') は title のチェック結果を確認しています。
+        -->
+        <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+
         <button type="submit">追加</button>
     </form>
 

@@ -2,6 +2,7 @@ package com.mkunori.tasklist.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import com.mkunori.tasklist.entity.Task;
 import com.mkunori.tasklist.form.TaskForm;
 import com.mkunori.tasklist.repository.TaskRepository;
+
+import jakarta.validation.Valid;
 
 /**
  * タスク一覧画面の表示、タスク追加、タスク削除を担当するコントローラです。
@@ -29,6 +32,8 @@ public class TaskController {
      * コンストラクタです。
      *
      * SpringがTaskRepositoryを自動で渡してくれます。
+     *
+     * @param taskRepository タスクリポジトリ
      */
     public TaskController(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
@@ -38,6 +43,9 @@ public class TaskController {
      * タスク一覧画面を表示します。
      *
      * DBからすべてのタスクを取得し、HTMLへ渡します。
+     *
+     * @param model 画面へ値を渡すためのオブジェクト
+     * @return 表示するテンプレート名
      */
     @GetMapping("/")
     public String showTaskList(Model model) {
@@ -54,11 +62,29 @@ public class TaskController {
     /**
      * 入力されたタスクをDBに保存します。
      *
-     * HTMLフォームから送信されたTaskFormを受け取り、
-     * DB保存用のTaskエンティティに変換して保存します。
+     * @Validを付けることで、TaskFormに書いた入力チェックが実行されます。
+     * BindingResultには、入力チェックの結果が入ります。
+     *
+     * @param taskForm 画面から送信された入力値
+     * @param bindingResult 入力チェックの結果
+     * @param model 画面へ値を渡すためのオブジェクト
+     * @return エラーがあれば一覧画面、成功すれば一覧画面へリダイレクト
      */
     @PostMapping("/tasks")
-    public String addTask(@ModelAttribute TaskForm taskForm) {
+    public String addTask(
+            @Valid @ModelAttribute TaskForm taskForm,
+            BindingResult bindingResult,
+            Model model) {
+
+        // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
+        if (bindingResult.hasErrors()) {
+            // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
+            model.addAttribute("tasks", taskRepository.findAll());
+
+            // redirect ではなく "tasks" を返すことで、エラー情報を画面に表示できる
+            return "tasks";
+        }
+
         // フォーム入力値から、DB保存用のEntityを作成する
         Task task = new Task(taskForm.getTitle());
 
@@ -73,6 +99,9 @@ public class TaskController {
      * 指定されたIDのタスクを削除します。
      *
      * URLに含まれるIDを受け取り、そのIDに対応するタスクをDBから削除します。
+     *
+     * @param id 削除するタスクのID
+     * @return 一覧画面へリダイレクト
      */
     @PostMapping("/tasks/{id}/delete")
     public String deleteTask(@PathVariable Long id) {

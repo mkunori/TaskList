@@ -67,6 +67,11 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- 入力チェックを行うための依存関係です -->
+		<dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
