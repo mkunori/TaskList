@@ -10,14 +10,42 @@
     <h1>TaskList</h1>
 
     <h2>新しいタスクを追加</h2>
+
+    <!--
+        タスク追加フォームです。
+        th:object="${taskForm}" は、Controllerから渡されたTaskFormと対応します。
+    -->
     <form th:action="@{/tasks}" th:object="${taskForm}" method="post">
+        <!--
+            th:field="*{title}" は taskForm.title と対応します。
+            入力された文字列は、ControllerのTaskFormに入ります。
+        -->
         <input type="text" th:field="*{title}">
         <button type="submit">追加</button>
     </form>
 
     <h2>タスク一覧</h2>
+
     <ul>
-        <li th:each="task : ${tasks}" th:text="${task.title}"></li>
+        <!--
+            Controllerから渡された tasks を1件ずつ取り出します。
+            tasks は List<Task> のような一覧データです。
+        -->
+        <li th:each="task : ${tasks}">
+            <!--
+                task.title は Taskクラスの getTitle() に対応します。
+                タスクのタイトルを画面に表示します。
+            -->
+            <span th:text="${task.title}"></span>
+
+            <!--
+                削除フォームです。
+                task.id をURLに埋め込んで、削除したいタスクを指定します。
+            -->
+            <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post" style="display:inline;">
+                <button type="submit">削除</button>
+            </form>
+        </li>
     </ul>
 </body>
 

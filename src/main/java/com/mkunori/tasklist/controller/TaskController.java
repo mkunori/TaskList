@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import com.mkunori.tasklist.entity.Task;
@@ -11,7 +12,10 @@ import com.mkunori.tasklist.form.TaskForm;
 import com.mkunori.tasklist.repository.TaskRepository;
 
 /**
- * タスク一覧画面の表示と、タスク追加を担当するコントローラです。
+ * タスク一覧画面の表示、タスク追加、タスク削除を担当するコントローラです。
+ *
+ * Controllerは、ブラウザからのリクエストを受け取り、
+ * 必要な処理を実行して、次に表示する画面を決めます。
  */
 @Controller
 public class TaskController {
@@ -22,9 +26,9 @@ public class TaskController {
     private final TaskRepository taskRepository;
 
     /**
-     * リポジトリを受け取ってコントローラを作成します。
-     * 
-     * @param taskRepository タスクリポジトリ
+     * コンストラクタです。
+     *
+     * SpringがTaskRepositoryを自動で渡してくれます。
      */
     public TaskController(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
@@ -32,36 +36,50 @@ public class TaskController {
 
     /**
      * タスク一覧画面を表示します。
-     * 
-     * @param model 画面に値を渡すためのオブジェクト
-     * @return 表示するテンプレート名
+     *
+     * DBからすべてのタスクを取得し、HTMLへ渡します。
      */
     @GetMapping("/")
     public String showTaskList(Model model) {
-        // DBから全タスクを取得して画面へ渡す
+        // DBから全タスクを取得して、tasks という名前でHTMLへ渡す
         model.addAttribute("tasks", taskRepository.findAll());
 
-        // フォーム表示用の空オブジェクトを渡す
+        // タスク追加フォーム用の空オブジェクトをHTMLへ渡す
         model.addAttribute("taskForm", new TaskForm());
 
+        // src/main/resources/templates/tasks.html を表示する
         return "tasks";
     }
 
     /**
-     * 入力されたタスクを保存します。
-     * 
-     * @param taskForm 画面から送信された入力値
-     * @return 一覧画面へリダイレクト
+     * 入力されたタスクをDBに保存します。
+     *
+     * HTMLフォームから送信されたTaskFormを受け取り、
+     * DB保存用のTaskエンティティに変換して保存します。
      */
     @PostMapping("/tasks")
     public String addTask(@ModelAttribute TaskForm taskForm) {
-        // フォームの値を使って Entity を作る
+        // フォーム入力値から、DB保存用のEntityを作成する
         Task task = new Task(taskForm.getTitle());
 
-        // DBへ保存する
+        // Repositoryを使ってDBに保存する
         taskRepository.save(task);
 
-        // 保存後は一覧画面へ戻す
+        // 保存後は一覧画面へリダイレクトする
+        return "redirect:/";
+    }
+
+    /**
+     * 指定されたIDのタスクを削除します。
+     *
+     * URLに含まれるIDを受け取り、そのIDに対応するタスクをDBから削除します。
+     */
+    @PostMapping("/tasks/{id}/delete")
+    public String deleteTask(@PathVariable Long id) {
+        // URLから受け取ったIDを指定して、DBからタスクを削除する
+        taskRepository.deleteById(id);
+
+        // 削除後は一覧画面へリダイレクトする
         return "redirect:/";
     }
 }
