@@ -1,5 +1,7 @@
 package com.mkunori.tasklist.controller;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -15,7 +17,7 @@ import com.mkunori.tasklist.repository.TaskRepository;
 import jakarta.validation.Valid;
 
 /**
- * タスク一覧画面の表示、タスク追加、タスク削除を担当するコントローラです。
+ * タスク一覧画面の表示、タスク追加、タスク削除、完了状態の切り替えを担当するコントローラです。
  *
  * Controllerは、ブラウザからのリクエストを受け取り、
  * 必要な処理を実行して、次に表示する画面を決めます。
@@ -81,7 +83,7 @@ public class TaskController {
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
             model.addAttribute("tasks", taskRepository.findAll());
 
-            // redirect ではなく "tasks" を返すことで、エラー情報を画面に表示できる
+            // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
         }
 
@@ -109,6 +111,34 @@ public class TaskController {
         taskRepository.deleteById(id);
 
         // 削除後は一覧画面へリダイレクトする
+        return "redirect:/";
+    }
+
+    /**
+     * 指定されたIDのタスクの完了状態を切り替えます。
+     *
+     * 未完了のタスクなら完了にし、完了済みのタスクなら未完了に戻します。
+     *
+     * @param id 完了状態を切り替えるタスクのID
+     * @return 一覧画面へリダイレクト
+     */
+    @PostMapping("/tasks/{id}/toggle")
+    public String toggleTaskDone(@PathVariable Long id) {
+        // IDを使ってDBからタスクを1件探す
+        Optional<Task> optionalTask = taskRepository.findById(id);
+
+        // タスクが見つかった場合だけ、完了状態を切り替える
+        if (optionalTask.isPresent()) {
+            Task task = optionalTask.get();
+
+            // Entityに用意したメソッドで、true/falseを反転する
+            task.toggleDone();
+
+            // 変更したEntityを保存する
+            taskRepository.save(task);
+        }
+
+        // 処理後は一覧画面へ戻る
         return "redirect:/";
     }
 }
