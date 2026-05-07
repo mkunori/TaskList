@@ -1,7 +1,5 @@
 package com.mkunori.tasklist.controller;
 
-import java.util.Optional;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -10,9 +8,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.mkunori.tasklist.entity.Task;
 import com.mkunori.tasklist.form.TaskForm;
-import com.mkunori.tasklist.repository.TaskRepository;
+import com.mkunori.tasklist.service.TaskService;
 
 import jakarta.validation.Valid;
 
@@ -20,39 +17,39 @@ import jakarta.validation.Valid;
  * タスク一覧画面の表示、タスク追加、タスク削除、完了状態の切り替えを担当するコントローラです。
  *
  * Controllerは、ブラウザからのリクエストを受け取り、
- * 必要な処理を実行して、次に表示する画面を決めます。
+ * Serviceへ処理を依頼して、次に表示する画面を決めます。
  */
 @Controller
 public class TaskController {
 
     /**
-     * タスクをDBから読み書きするためのリポジトリです。
+     * タスクに関する処理を担当するサービスです。
      */
-    private final TaskRepository taskRepository;
+    private final TaskService taskService;
 
     /**
      * コンストラクタです。
      *
-     * SpringがTaskRepositoryを自動で渡してくれます。
+     * SpringがTaskServiceを自動で渡してくれます。
      *
-     * @param taskRepository タスクリポジトリ
+     * @param taskService タスクサービス
      */
-    public TaskController(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
+    public TaskController(TaskService taskService) {
+        this.taskService = taskService;
     }
 
     /**
      * タスク一覧画面を表示します。
      *
-     * DBからすべてのタスクを取得し、HTMLへ渡します。
+     * Serviceからすべてのタスクを取得し、HTMLへ渡します。
      *
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
     @GetMapping("/")
     public String showTaskList(Model model) {
-        // DBから全タスクを取得して、tasks という名前でHTMLへ渡す
-        model.addAttribute("tasks", taskRepository.findAll());
+        // Serviceから全タスクを取得して、tasks という名前でHTMLへ渡す
+        model.addAttribute("tasks", taskService.findAllTasks());
 
         // タスク追加フォーム用の空オブジェクトをHTMLへ渡す
         model.addAttribute("taskForm", new TaskForm());
@@ -64,8 +61,7 @@ public class TaskController {
     /**
      * 入力されたタスクをDBに保存します。
      *
-     * @Validを付けることで、TaskFormに書いた入力チェックが実行されます。
-     * BindingResultには、入力チェックの結果が入ります。
+     * 入力チェックに成功した場合だけ、Serviceへタスク追加を依頼します。
      *
      * @param taskForm 画面から送信された入力値
      * @param bindingResult 入力チェックの結果
@@ -81,17 +77,14 @@ public class TaskController {
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
-            model.addAttribute("tasks", taskRepository.findAll());
+            model.addAttribute("tasks", taskService.findAllTasks());
 
             // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
         }
 
-        // フォーム入力値から、DB保存用のEntityを作成する
-        Task task = new Task(taskForm.getTitle());
-
-        // Repositoryを使ってDBに保存する
-        taskRepository.save(task);
+        // Serviceにタスク追加処理を依頼する
+        taskService.addTask(taskForm.getTitle());
 
         // 保存後は一覧画面へリダイレクトする
         return "redirect:/";
@@ -100,15 +93,15 @@ public class TaskController {
     /**
      * 指定されたIDのタスクを削除します。
      *
-     * URLに含まれるIDを受け取り、そのIDに対応するタスクをDBから削除します。
+     * URLに含まれるIDを受け取り、Serviceへ削除処理を依頼します。
      *
      * @param id 削除するタスクのID
      * @return 一覧画面へリダイレクト
      */
     @PostMapping("/tasks/{id}/delete")
     public String deleteTask(@PathVariable Long id) {
-        // URLから受け取ったIDを指定して、DBからタスクを削除する
-        taskRepository.deleteById(id);
+        // Serviceに削除処理を依頼する
+        taskService.deleteTask(id);
 
         // 削除後は一覧画面へリダイレクトする
         return "redirect:/";
@@ -117,26 +110,15 @@ public class TaskController {
     /**
      * 指定されたIDのタスクの完了状態を切り替えます。
      *
-     * 未完了のタスクなら完了にし、完了済みのタスクなら未完了に戻します。
+     * URLに含まれるIDを受け取り、Serviceへ完了状態の切り替えを依頼します。
      *
      * @param id 完了状態を切り替えるタスクのID
      * @return 一覧画面へリダイレクト
      */
     @PostMapping("/tasks/{id}/toggle")
     public String toggleTaskDone(@PathVariable Long id) {
-        // IDを使ってDBからタスクを1件探す
-        Optional<Task> optionalTask = taskRepository.findById(id);
-
-        // タスクが見つかった場合だけ、完了状態を切り替える
-        if (optionalTask.isPresent()) {
-            Task task = optionalTask.get();
-
-            // Entityに用意したメソッドで、true/falseを反転する
-            task.toggleDone();
-
-            // 変更したEntityを保存する
-            taskRepository.save(task);
-        }
+        // Serviceに完了状態の切り替え処理を依頼する
+        taskService.toggleTaskDone(id);
 
         // 処理後は一覧画面へ戻る
         return "redirect:/";
