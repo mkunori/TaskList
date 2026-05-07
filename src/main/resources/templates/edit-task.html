@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>タスク編集 - TaskList</title>
+</head>
+
+<body>
+    <h1>タスク編集</h1>
+
+    <!--
+        タスク編集フォームです。
+        th:object="${taskUpdateForm}" は、Controllerから渡されたTaskUpdateFormと対応します。
+    -->
+    <form th:action="@{/tasks/{id}/update(id=${taskUpdateForm.id})}"
+          th:object="${taskUpdateForm}"
+          method="post">
+
+        <!--
+            更新対象のidを隠し項目として送信します。
+            画面には表示されませんが、フォーム送信時にControllerへ送られます。
+        -->
+        <input type="hidden" th:field="*{id}">
+
+        <div>
+            <label for="title">タイトル</label>
+
+            <!--
+                th:field="*{title}" は taskUpdateForm.title と対応します。
+                編集画面では、現在のタイトルが最初から入力欄に表示されます。
+            -->
+            <input type="text" id="title" th:field="*{title}">
+        </div>
+
+        <!--
+            titleに入力エラーがある場合だけ、エラーメッセージを表示します。
+        -->
+        <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+
+        <button type="submit">更新</button>
+    </form>
+
+    <!--
+        一覧画面へ戻るためのリンクです。
+    -->
+    <p>
+        <a th:href="@{/}">一覧へ戻る</a>
+    </p>
+</body>
+
+</html>

@@ -43,25 +43,30 @@
                 task.done は Taskクラスの isDone() に対応します。
                 true の場合は「完了」、false の場合は「未完了」と表示します。
             -->
-            <span th:text="${task.done} ? '完了' : '未完了'"></span>
-
+            <span th:text="${task.done ? '完了' : '未完了'}"></span>
+        
             <!--
                 task.title は Taskクラスの getTitle() に対応します。
                 完了済みタスクは、見た目でわかるように取り消し線を付けます。
             -->
-            <span th:text="${task.title}" th:style="${task.done} ? 'text-decoration: line-through;' : ''"></span>
-
+            <span th:text="${task.title}"
+                  th:style="${task.done ? 'text-decoration: line-through;' : ''}">
+            </span>
+        
+            <!--
+                編集画面へ移動するリンクです。
+            -->
+            <a th:href="@{/tasks/{id}/edit(id=${task.id})}">編集</a>
+        
             <!--
                 完了状態を切り替えるフォームです。
-                task.id をURLに埋め込んで、Controllerの /tasks/{id}/toggle に送信します。
             -->
             <form th:action="@{/tasks/{id}/toggle(id=${task.id})}" method="post" style="display:inline;">
-                <button type="submit" th:text="${task.done} ? '未完了に戻す' : '完了にする'"></button>
+                <button type="submit" th:text="${task.done ? '未完了に戻す' : '完了にする'}"></button>
             </form>
-
+        
             <!--
                 削除フォームです。
-                task.id をURLに埋め込んで、Controllerの /tasks/{id}/delete に送信します。
             -->
             <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post" style="display:inline;">
                 <button type="submit">削除</button>

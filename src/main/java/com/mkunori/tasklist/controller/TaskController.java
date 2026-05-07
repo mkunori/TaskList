@@ -1,5 +1,7 @@
 package com.mkunori.tasklist.controller;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -9,12 +11,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import com.mkunori.tasklist.form.TaskForm;
+import com.mkunori.tasklist.form.TaskUpdateForm;
 import com.mkunori.tasklist.service.TaskService;
 
 import jakarta.validation.Valid;
 
 /**
- * タスク一覧画面の表示、タスク追加、タスク削除、完了状態の切り替えを担当するコントローラです。
+ * タスク一覧画面の表示、タスク追加、タスク削除、完了状態の切り替え、更新を担当するコントローラです。
  *
  * Controllerは、ブラウザからのリクエストを受け取り、
  * Serviceへ処理を依頼して、次に表示する画面を決めます。
@@ -121,6 +124,70 @@ public class TaskController {
         taskService.toggleTaskDone(id);
 
         // 処理後は一覧画面へ戻る
+        return "redirect:/";
+    }
+
+    /**
+     * タスク編集画面を表示します。
+     *
+     * URLに含まれるIDを使って編集対象のタスクを取得し、
+     * 編集フォームに値を入れて画面へ渡します。
+     *
+     * @param id 編集対象のタスクID
+     * @param model 画面へ値を渡すためのオブジェクト
+     * @return 編集画面のテンプレート名。タスクが見つからない場合は一覧画面へリダイレクト
+     */
+    @GetMapping("/tasks/{id}/edit")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        // Serviceから編集画面用のフォームを取得する
+        Optional<TaskUpdateForm> optionalForm = taskService.findUpdateFormById(id);
+
+        // 対象タスクが見つからない場合は一覧画面へ戻す
+        if (optionalForm.isEmpty()) {
+            return "redirect:/";
+        }
+
+        // 編集画面で使うフォームをHTMLへ渡す
+        model.addAttribute("taskUpdateForm", optionalForm.get());
+
+        // src/main/resources/templates/edit-task.html を表示する
+        return "edit-task";
+    }
+
+    /**
+     * 編集画面から送信された内容でタスクを更新します。
+     *
+     * 入力チェックに成功した場合だけ、Serviceへ更新処理を依頼します。
+     *
+     * @param id URLに含まれるタスクID
+     * @param taskUpdateForm 編集画面から送信された入力値
+     * @param bindingResult 入力チェックの結果
+     * @return エラーがあれば編集画面、成功すれば一覧画面へリダイレクト
+     */
+    @PostMapping("/tasks/{id}/update")
+    public String updateTask(
+            @PathVariable Long id,
+            @Valid @ModelAttribute TaskUpdateForm taskUpdateForm,
+            BindingResult bindingResult) {
+
+        // URLのIDをフォームへ設定する
+        // hidden項目からもidは送られるが、URLの値を優先して使う
+        taskUpdateForm.setId(id);
+
+        // 入力チェックでエラーがある場合は、保存せずに編集画面へ戻す
+        if (bindingResult.hasErrors()) {
+            return "edit-task";
+        }
+
+        // Serviceに更新処理を依頼する
+        boolean updated = taskService.updateTask(taskUpdateForm);
+
+        // 対象タスクが存在しなかった場合は一覧画面へ戻す
+        if (!updated) {
+            return "redirect:/";
+        }
+
+        // 更新後は一覧画面へ戻る
         return "redirect:/";
     }
 }
