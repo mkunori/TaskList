@@ -61,7 +61,7 @@ public class TaskController {
         return "tasks";
     }
 
-    /**
+     /**
      * 入力されたタスクをDBに保存します。
      *
      * 入力チェックに成功した場合だけ、Serviceへタスク追加を依頼します。
@@ -76,19 +76,19 @@ public class TaskController {
             @Valid @ModelAttribute TaskForm taskForm,
             BindingResult bindingResult,
             Model model) {
-
+            
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
             model.addAttribute("tasks", taskService.findAllTasks());
-
+        
             // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
         }
-
+    
         // Serviceにタスク追加処理を依頼する
-        taskService.addTask(taskForm.getTitle());
-
+        taskService.addTask(taskForm.getTitle(), taskForm.getDueDate());
+    
         // 保存後は一覧画面へリダイレクトする
         return "redirect:/";
     }

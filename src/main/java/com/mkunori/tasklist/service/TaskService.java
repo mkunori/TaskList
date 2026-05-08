@@ -1,5 +1,6 @@
 package com.mkunori.tasklist.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,14 +52,15 @@ public class TaskService {
     /**
      * 新しいタスクを追加します。
      *
-     * 画面から受け取ったタイトルを使ってTaskエンティティを作成し、
+     * 画面から受け取ったタイトルと期限日を使ってTaskエンティティを作成し、
      * DBへ保存します。
      *
      * @param title タスクのタイトル
+     * @param dueDate タスクの期限日。未入力の場合は null
      */
-    public void addTask(String title) {
+    public void addTask(String title, LocalDate dueDate) {
         // フォーム入力値から、DB保存用のEntityを作成する
-        Task task = new Task(title);
+        Task task = new Task(title, dueDate);
 
         // Repositoryを使ってDBへ保存する
         taskRepository.save(task);
@@ -122,14 +124,15 @@ public class TaskService {
         TaskUpdateForm form = new TaskUpdateForm();
         form.setId(task.getId());
         form.setTitle(task.getTitle());
+        form.setDueDate(task.getDueDate());
 
         return Optional.of(form);
     }
 
     /**
-     * 指定されたタスクのタイトルを更新します。
+     * 指定されたタスクのタイトルと期限日を更新します。
      *
-     * 更新対象のタスクをDBから取得し、フォームのタイトルで上書きして保存します。
+     * 更新対象のタスクをDBから取得し、フォームの値で上書きして保存します。
      *
      * @param taskUpdateForm 更新フォーム
      * @return 更新できた場合はtrue、対象タスクが見つからなかった場合はfalse
@@ -143,9 +146,10 @@ public class TaskService {
             return false;
         }
 
-        // DBから取得したEntityのタイトルを、フォームの値で更新する
+        // DBから取得したEntityを、フォームの値で更新する
         Task task = optionalTask.get();
         task.setTitle(taskUpdateForm.getTitle());
+        task.setDueDate(taskUpdateForm.getDueDate());
 
         // 変更したEntityをDBへ保存する
         taskRepository.save(task);

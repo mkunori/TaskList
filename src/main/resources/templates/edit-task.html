@@ -38,6 +38,17 @@
         -->
         <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
 
+        <div>
+            <label for="dueDate">期限</label>
+
+            <!--
+                th:field="*{dueDate}" は taskUpdateForm.dueDate と対応します。
+                期限が設定されている場合は、その日付が最初から表示されます。
+                未入力にすると、期限なしとして保存されます。
+            -->
+            <input type="date" id="dueDate" th:field="*{dueDate}">
+        </div>
+
         <button type="submit">更新</button>
     </form>
 

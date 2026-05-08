@@ -16,17 +16,31 @@
         th:object="${taskForm}" は、Controllerから渡されたTaskFormと対応します。
     -->
     <form th:action="@{/tasks}" th:object="${taskForm}" method="post">
-        <!--
-            th:field="*{title}" は taskForm.title と対応します。
-            入力された文字列は、ControllerのTaskFormに入ります。
-        -->
-        <input type="text" th:field="*{title}">
+        <div>
+            <label for="title">タイトル</label>
+
+            <!--
+                th:field="*{title}" は taskForm.title と対応します。
+                入力された文字列は、ControllerのTaskFormに入ります。
+            -->
+            <input type="text" id="title" th:field="*{title}">
+        </div>
 
         <!--
             titleに入力エラーがある場合だけ、エラーメッセージを表示します。
-            #fields.hasErrors('title') は title のチェック結果を確認しています。
         -->
         <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+
+        <div>
+            <label for="dueDate">期限</label>
+
+            <!--
+                type="date" にすると、ブラウザの日付入力欄になります。
+                th:field="*{dueDate}" は taskForm.dueDate と対応します。
+                未入力の場合、Java側では null として扱われます。
+            -->
+            <input type="date" id="dueDate" th:field="*{dueDate}">
+        </div>
 
         <button type="submit">追加</button>
     </form>
@@ -44,7 +58,7 @@
                 true の場合は「完了」、false の場合は「未完了」と表示します。
             -->
             <span th:text="${task.done ? '完了' : '未完了'}"></span>
-        
+
             <!--
                 task.title は Taskクラスの getTitle() に対応します。
                 完了済みタスクは、見た目でわかるように取り消し線を付けます。
@@ -52,21 +66,30 @@
             <span th:text="${task.title}"
                   th:style="${task.done ? 'text-decoration: line-through;' : ''}">
             </span>
-        
+
+            <!--
+                期限日を表示します。
+                dueDate が null の場合は「期限なし」と表示します。
+            -->
+            <span th:text="${task.dueDate != null ? '期限: ' + task.dueDate : '期限なし'}"></span>
+
             <!--
                 編集画面へ移動するリンクです。
+                task.id をURLに埋め込んで、Controllerの /tasks/{id}/edit にアクセスします。
             -->
             <a th:href="@{/tasks/{id}/edit(id=${task.id})}">編集</a>
-        
+
             <!--
                 完了状態を切り替えるフォームです。
+                task.id をURLに埋め込んで、Controllerの /tasks/{id}/toggle に送信します。
             -->
             <form th:action="@{/tasks/{id}/toggle(id=${task.id})}" method="post" style="display:inline;">
                 <button type="submit" th:text="${task.done ? '未完了に戻す' : '完了にする'}"></button>
             </form>
-        
+
             <!--
                 削除フォームです。
+                task.id をURLに埋め込んで、Controllerの /tasks/{id}/delete に送信します。
             -->
             <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post" style="display:inline;">
                 <button type="submit">削除</button>

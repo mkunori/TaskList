@@ -1,5 +1,7 @@
 package com.mkunori.tasklist.form;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -29,6 +31,13 @@ public class TaskUpdateForm {
     @NotBlank(message = "タイトルを入力してください")
     @Size(max = 255, message = "タイトルは255文字以内で入力してください")
     private String title;
+
+    /**
+     * 更新後の期限日です。
+     *
+     * 期限なしも許可するため、未入力の場合は null になります。
+     */
+    private LocalDate dueDate;
 
     /**
      * タスクIDを返します。
@@ -66,5 +75,25 @@ public class TaskUpdateForm {
      */
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    /**
+     * 期限日を返します。
+     *
+     * @return 期限日。未入力の場合は null
+     */
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    /**
+     * 期限日を設定します。
+     *
+     * Springがフォームの日付入力を LocalDate としてセットします。
+     *
+     * @param dueDate 期限日。未入力の場合は null
+     */
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
     }
 }

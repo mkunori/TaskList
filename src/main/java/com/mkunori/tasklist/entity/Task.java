@@ -1,5 +1,7 @@
 package com.mkunori.tasklist.entity;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -43,6 +45,13 @@ public class Task {
     private boolean done;
 
     /**
+     * タスクの期限日です。
+     *
+     * 期限が設定されていない場合は null になります。
+     */
+    private LocalDate dueDate;
+
+    /**
      * JPAが利用する引数なしコンストラクタです。
      *
      * Entityでは、JPAが内部でオブジェクトを作成できるように、
@@ -60,6 +69,21 @@ public class Task {
      */
     public Task(String title) {
         this.title = title;
+        this.done = false;
+    }
+
+    /**
+     * タイトルと期限日を指定してタスクを作成します。
+     *
+     * 新規作成時は、未完了のタスクとして作成します。
+     * 期限日が未入力の場合、dueDate は null になります。
+     *
+     * @param title タスクのタイトル
+     * @param dueDate タスクの期限日
+     */
+    public Task(String title, LocalDate dueDate) {
+        this.title = title;
+        this.dueDate = dueDate;
         this.done = false;
     }
 
@@ -108,6 +132,24 @@ public class Task {
      */
     public void setDone(boolean done) {
         this.done = done;
+    }
+
+    /**
+     * タスクの期限日を返します。
+     *
+     * @return タスクの期限日。未設定の場合は null
+     */
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    /**
+     * タスクの期限日を設定します。
+     *
+     * @param dueDate タスクの期限日。未設定の場合は null
+     */
+    public void setDueDate(LocalDate dueDate) {
+        this.dueDate = dueDate;
     }
 
     /**
