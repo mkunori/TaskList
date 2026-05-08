@@ -42,6 +42,21 @@
             <input type="date" id="dueDate" th:field="*{dueDate}">
         </div>
 
+        <div>
+            <label for="priority">優先度</label>
+        
+            <!--
+                th:field="*{priority}" は taskForm.priority と対応します。
+                priorities は Controller の @ModelAttribute から渡されています。
+            -->
+            <select id="priority" th:field="*{priority}">
+                <option th:each="priority : ${priorities}"
+                        th:value="${priority}"
+                        th:text="${priority.displayName}">
+                </option>
+            </select>
+        </div>
+
         <button type="submit">追加</button>
     </form>
 
@@ -72,6 +87,12 @@
                 dueDate が null の場合は「期限なし」と表示します。
             -->
             <span th:text="${task.dueDate != null ? '期限: ' + task.dueDate : '期限なし'}"></span>
+
+            <!--
+                優先度を表示します。
+                task.priority は Taskクラスの getPriority() に対応します。
+            -->
+            <span th:text="${'優先度: ' + task.priority.displayName}"></span>
 
             <!--
                 編集画面へ移動するリンクです。

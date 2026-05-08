@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.form.TaskForm;
 import com.mkunori.tasklist.form.TaskUpdateForm;
 import com.mkunori.tasklist.service.TaskService;
@@ -61,10 +62,8 @@ public class TaskController {
         return "tasks";
     }
 
-     /**
+    /**
      * 入力されたタスクをDBに保存します。
-     *
-     * 入力チェックに成功した場合だけ、Serviceへタスク追加を依頼します。
      *
      * @param taskForm 画面から送信された入力値
      * @param bindingResult 入力チェックの結果
@@ -87,7 +86,7 @@ public class TaskController {
         }
     
         // Serviceにタスク追加処理を依頼する
-        taskService.addTask(taskForm.getTitle(), taskForm.getDueDate());
+        taskService.addTask(taskForm.getTitle(), taskForm.getDueDate(), taskForm.getPriority());
     
         // 保存後は一覧画面へリダイレクトする
         return "redirect:/";
@@ -189,5 +188,18 @@ public class TaskController {
 
         // 更新後は一覧画面へ戻る
         return "redirect:/";
+    }
+
+    /**
+     * 画面で使用する優先度一覧を返します。
+     *
+     * このメソッドで返した値は、tasks.html や edit-task.html から
+     * priorities という名前で参照できます。
+     *
+     * @return 優先度一覧
+     */
+    @ModelAttribute("priorities")
+    public Priority[] priorities() {
+        return Priority.values();
     }
 }

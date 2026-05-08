@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.entity.Task;
 import com.mkunori.tasklist.form.TaskUpdateForm;
 import com.mkunori.tasklist.repository.TaskRepository;
@@ -15,8 +16,6 @@ import com.mkunori.tasklist.repository.TaskRepository;
  *
  * Serviceは、ControllerとRepositoryの間に入るクラスです。
  * Controllerから依頼を受けて、アプリケーションの処理を実行します。
- *
- * このクラスでは、タスク一覧の取得、追加、削除、完了状態の切り替え、更新を担当します。
  */
 @Service
 public class TaskService {
@@ -28,7 +27,7 @@ public class TaskService {
 
     /**
      * コンストラクタです。
-     *
+     * 
      * SpringがTaskRepositoryを自動で渡してくれます。
      *
      * @param taskRepository タスクリポジトリ
@@ -51,16 +50,17 @@ public class TaskService {
 
     /**
      * 新しいタスクを追加します。
-     *
+     * 
      * 画面から受け取ったタイトルと期限日を使ってTaskエンティティを作成し、
      * DBへ保存します。
      *
      * @param title タスクのタイトル
      * @param dueDate タスクの期限日。未入力の場合は null
+     * @param priority タスクの優先度
      */
-    public void addTask(String title, LocalDate dueDate) {
+    public void addTask(String title, LocalDate dueDate, Priority priority) {
         // フォーム入力値から、DB保存用のEntityを作成する
-        Task task = new Task(title, dueDate);
+        Task task = new Task(title, dueDate, priority);
 
         // Repositoryを使ってDBへ保存する
         taskRepository.save(task);
@@ -77,8 +77,6 @@ public class TaskService {
 
     /**
      * 指定されたIDのタスクの完了状態を切り替えます。
-     *
-     * 未完了のタスクなら完了にし、完了済みのタスクなら未完了に戻します。
      *
      * @param id 完了状態を切り替えるタスクのID
      */
@@ -103,7 +101,7 @@ public class TaskService {
 
     /**
      * 編集画面に表示するためのフォームを作成します。
-     *
+     * 
      * 指定されたIDのタスクをDBから取得し、
      * 画面表示用のTaskUpdateFormへ詰め替えます。
      *
@@ -125,13 +123,14 @@ public class TaskService {
         form.setId(task.getId());
         form.setTitle(task.getTitle());
         form.setDueDate(task.getDueDate());
+        form.setPriority(task.getPriority());
 
         return Optional.of(form);
     }
 
     /**
-     * 指定されたタスクのタイトルと期限日を更新します。
-     *
+     * 指定されたタスクのタイトル、期限日、優先度を更新します。
+     * 
      * 更新対象のタスクをDBから取得し、フォームの値で上書きして保存します。
      *
      * @param taskUpdateForm 更新フォーム
@@ -150,6 +149,7 @@ public class TaskService {
         Task task = optionalTask.get();
         task.setTitle(taskUpdateForm.getTitle());
         task.setDueDate(taskUpdateForm.getDueDate());
+        task.setPriority(taskUpdateForm.getPriority());
 
         // 変更したEntityをDBへ保存する
         taskRepository.save(task);

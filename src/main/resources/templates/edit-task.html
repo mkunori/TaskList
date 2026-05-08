@@ -49,6 +49,21 @@
             <input type="date" id="dueDate" th:field="*{dueDate}">
         </div>
 
+        <div>
+            <label for="priority">優先度</label>
+        
+            <!--
+                th:field="*{priority}" は taskUpdateForm.priority と対応します。
+                現在の優先度が選択された状態で表示されます。
+            -->
+            <select id="priority" th:field="*{priority}">
+                <option th:each="priority : ${priorities}"
+                        th:value="${priority}"
+                        th:text="${priority.displayName}">
+                </option>
+            </select>
+        </div>
+
         <button type="submit">更新</button>
     </form>
 

@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -52,38 +54,45 @@ public class Task {
     private LocalDate dueDate;
 
     /**
-     * JPAが利用する引数なしコンストラクタです。
+     * タスクの優先度です。
      *
-     * Entityでは、JPAが内部でオブジェクトを作成できるように、
-     * 引数なしコンストラクタが必要です。
+     * EnumType.STRINGを指定することで、DBには LOW、MEDIUM、HIGH の文字列として保存されます。
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Priority priority;
+
+    /**
+     * JPAが利用する引数なしコンストラクタです。
      */
     public Task() {
     }
 
     /**
-     * タイトルを指定してタスクを作成します。
-     *
-     * 新規作成時は、未完了のタスクとして作成します。
-     *
-     * @param title タスクのタイトル
-     */
-    public Task(String title) {
-        this.title = title;
-        this.done = false;
-    }
-
-    /**
      * タイトルと期限日を指定してタスクを作成します。
      *
-     * 新規作成時は、未完了のタスクとして作成します。
-     * 期限日が未入力の場合、dueDate は null になります。
+     * 新規作成時は、未完了かつ通常優先度のタスクとして作成します。
      *
      * @param title タスクのタイトル
      * @param dueDate タスクの期限日
      */
     public Task(String title, LocalDate dueDate) {
+        this(title, dueDate, Priority.MEDIUM);
+    }
+
+    /**
+     * タイトル、期限日、優先度を指定してタスクを作成します。
+     *
+     * 新規作成時は、未完了のタスクとして作成します。
+     *
+     * @param title タスクのタイトル
+     * @param dueDate タスクの期限日
+     * @param priority タスクの優先度
+     */
+    public Task(String title, LocalDate dueDate, Priority priority) {
         this.title = title;
         this.dueDate = dueDate;
+        this.priority = priority;
         this.done = false;
     }
 
@@ -117,8 +126,6 @@ public class Task {
     /**
      * タスクが完了しているかどうかを返します。
      *
-     * boolean型のgetterは、getDoneではなくisDoneという名前にすることが多いです。
-     *
      * @return 完了している場合はtrue、未完了の場合はfalse
      */
     public boolean isDone() {
@@ -150,6 +157,24 @@ public class Task {
      */
     public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
+    }
+
+    /**
+     * タスクの優先度を返します。
+     *
+     * @return タスクの優先度
+     */
+    public Priority getPriority() {
+        return priority;
+    }
+
+    /**
+     * タスクの優先度を設定します。
+     *
+     * @param priority タスクの優先度
+     */
+    public void setPriority(Priority priority) {
+        this.priority = priority;
     }
 
     /**

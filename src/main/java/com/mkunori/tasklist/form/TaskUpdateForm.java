@@ -2,6 +2,8 @@ package com.mkunori.tasklist.form;
 
 import java.time.LocalDate;
 
+import com.mkunori.tasklist.entity.Priority;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,17 +18,12 @@ public class TaskUpdateForm {
 
     /**
      * 更新対象のタスクIDです。
-     *
-     * どのタスクを更新するかを判断するために使います。
      */
     @NotNull(message = "更新対象のタスクIDがありません")
     private Long id;
 
     /**
      * 更新後のタスクタイトルです。
-     *
-     * 空文字や空白だけの入力は許可しません。
-     * DBのtitle列に合わせて、最大255文字までに制限します。
      */
     @NotBlank(message = "タイトルを入力してください")
     @Size(max = 255, message = "タイトルは255文字以内で入力してください")
@@ -38,6 +35,12 @@ public class TaskUpdateForm {
      * 期限なしも許可するため、未入力の場合は null になります。
      */
     private LocalDate dueDate;
+
+    /**
+     * 更新後の優先度です。
+     */
+    @NotNull(message = "優先度を選択してください")
+    private Priority priority = Priority.MEDIUM;
 
     /**
      * タスクIDを返します。
@@ -68,7 +71,7 @@ public class TaskUpdateForm {
 
     /**
      * タイトルを設定します。
-     *
+     * 
      * Springがフォームの入力値をこのメソッドを使ってセットします。
      *
      * @param title タイトル
@@ -88,12 +91,30 @@ public class TaskUpdateForm {
 
     /**
      * 期限日を設定します。
-     *
+     * 
      * Springがフォームの日付入力を LocalDate としてセットします。
      *
      * @param dueDate 期限日。未入力の場合は null
      */
     public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
+    }
+
+    /**
+     * 優先度を返します。
+     *
+     * @return 優先度
+     */
+    public Priority getPriority() {
+        return priority;
+    }
+
+    /**
+     * 優先度を設定します。
+     *
+     * @param priority 優先度
+     */
+    public void setPriority(Priority priority) {
+        this.priority = priority;
     }
 }
