@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.form.TaskForm;
 import com.mkunori.tasklist.form.TaskUpdateForm;
 import com.mkunori.tasklist.service.TaskService;
+import com.mkunori.tasklist.service.TaskSortType;
 
 import jakarta.validation.Valid;
 
@@ -45,15 +47,23 @@ public class TaskController {
     /**
      * タスク一覧画面を表示します。
      *
-     * Serviceからすべてのタスクを取得し、HTMLへ渡します。
+     * sortパラメータを受け取り、指定された条件で並び替えたタスク一覧をHTMLへ渡します。
+     * sortが指定されていない場合は、登録順で表示します。
      *
+     * @param sortType 並び替え条件。未指定の場合は登録順
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
     @GetMapping("/")
-    public String showTaskList(Model model) {
-        // Serviceから全タスクを取得して、tasks という名前でHTMLへ渡す
-        model.addAttribute("tasks", taskService.findAllTasks());
+    public String showTaskList(
+            @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            Model model) {
+
+        // Serviceから並び替え済みのタスク一覧を取得して、tasks という名前でHTMLへ渡す
+        model.addAttribute("tasks", taskService.findTasks(sortType));
+
+        // 現在選択中の並び替え条件をHTMLへ渡す
+        model.addAttribute("selectedSort", sortType);
 
         // タスク追加フォーム用の空オブジェクトをHTMLへ渡す
         model.addAttribute("taskForm", new TaskForm());
@@ -64,6 +74,8 @@ public class TaskController {
 
     /**
      * 入力されたタスクをDBに保存します。
+     *
+     * 入力チェックに成功した場合だけ、Serviceへタスク追加を依頼します。
      *
      * @param taskForm 画面から送信された入力値
      * @param bindingResult 入力チェックの結果
@@ -78,8 +90,14 @@ public class TaskController {
             
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
+            // エラー時は登録順の一覧を表示する
+            TaskSortType sortType = TaskSortType.CREATED;
+        
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
-            model.addAttribute("tasks", taskService.findAllTasks());
+            model.addAttribute("tasks", taskService.findTasks(sortType));
+        
+            // 現在選択中の並び替え条件をHTMLへ渡す
+            model.addAttribute("selectedSort", sortType);
         
             // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
@@ -202,4 +220,18 @@ public class TaskController {
     public Priority[] priorities() {
         return Priority.values();
     }
+
+    /**
+     * 画面で使用する並び替え条件一覧を返します。
+     *
+     * このメソッドで返した値は、tasks.html から
+     * sortTypes という名前で参照できます。
+     *
+     * @return 並び替え条件一覧
+     */
+    @ModelAttribute("sortTypes")
+    public TaskSortType[] sortTypes() {
+        return TaskSortType.values();
+    }
+
 }

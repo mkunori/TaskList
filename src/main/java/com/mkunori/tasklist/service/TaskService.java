@@ -1,6 +1,7 @@
 package com.mkunori.tasklist.service;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,15 +38,71 @@ public class TaskService {
     }
 
     /**
-     * すべてのタスクを取得します。
+     * すべてのタスクを登録順で取得します。
      *
-     * ControllerはDBの詳しい取得方法を知らなくても、
-     * このメソッドを呼ぶだけでタスク一覧を取得できます。
+     * 既存の呼び出し箇所を残すためのメソッドです。
+     * 内部では、登録順の並び替え条件を指定して取得しています。
      *
-     * @return すべてのタスク一覧
+     * @return 登録順のタスク一覧
      */
     public List<Task> findAllTasks() {
-        return taskRepository.findAll();
+        return findTasks(TaskSortType.CREATED);
+    }
+
+    /**
+     * 指定された並び替え条件でタスク一覧を取得します。
+     *
+     * 今回はDBから全件取得したあと、Java側で並び替えています。
+     * 学習初期では、Comparatorの練習にもなるため理解しやすい方法です。
+     *
+     * @param sortType 並び替え条件
+     * @return 並び替え済みのタスク一覧
+     */
+    public List<Task> findTasks(TaskSortType sortType) {
+        // DBからすべてのタスクを取得する
+        List<Task> tasks = taskRepository.findAll();
+
+        // sortTypeがnullの場合は、登録順として扱う
+        if (sortType == null) {
+            return sortByCreated(tasks);
+        }
+
+        // 並び替え条件に応じて、返す一覧を変える
+        return switch (sortType) {
+            case CREATED -> sortByCreated(tasks);
+            case DUE_DATE -> sortByDueDate(tasks);
+            case PRIORITY -> sortByPriority(tasks);
+        };
+    }
+
+    /**
+     * タスク一覧を登録順で並び替えます。
+     *
+     * idは自動採番されるため、idの昇順にすると登録が古い順になります。
+     *
+     * @param tasks 並び替え前のタスク一覧
+     * @return 登録順に並び替えたタスク一覧
+     */
+    private List<Task> sortByCreated(List<Task> tasks) {
+        return tasks.stream()
+                .sorted(Comparator.comparing(Task::getId))
+                .toList();
+    }
+
+    /**
+     * タスク一覧を期限が近い順で並び替えます。
+     *
+     * dueDateがnullのタスク、つまり期限なしのタスクは最後に並べます。
+     *
+     * @param tasks 並び替え前のタスク一覧
+     * @return 期限が近い順に並び替えたタスク一覧
+     */
+    private List<Task> sortByDueDate(List<Task> tasks) {
+        return tasks.stream()
+                .sorted(Comparator.comparing(
+                        Task::getDueDate,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     /**
@@ -155,5 +212,23 @@ public class TaskService {
         taskRepository.save(task);
 
         return true;
+    }
+
+    /**
+     * タスク一覧を優先度が高い順で並び替えます。
+     *
+     * PriorityのsortOrderを使い、HIGH、MEDIUM、LOW の順に表示します。
+     * 優先度が同じタスクは、登録順で並べます。
+     *
+     * @param tasks 並び替え前のタスク一覧
+     * @return 優先度が高い順に並び替えたタスク一覧
+     */
+    private List<Task> sortByPriority(List<Task> tasks) {
+        return tasks.stream()
+                .sorted(Comparator
+                        .comparing((Task task) -> task.getPriority().getSortOrder())
+                        .reversed()
+                        .thenComparing(Task::getId))
+                .toList();
     }
 }

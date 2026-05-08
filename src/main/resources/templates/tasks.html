@@ -60,6 +60,31 @@
         <button type="submit">追加</button>
     </form>
 
+    <h2>並び替え</h2>
+    
+    <!--
+        タスク一覧の並び替え条件を選ぶフォームです。
+        method="get" にすることで、選択した条件が URL のクエリパラメータとして送信されます。
+        例: /?sort=DUE_DATE
+    -->
+    <form th:action="@{/}" method="get">
+        <label for="sort">並び替え</label>
+    
+        <!--
+            name="sort" は Controller の @RequestParam(name = "sort") と対応します。
+            selectedSort は、現在選択中の並び替え条件です。
+        -->
+        <select id="sort" name="sort">
+            <option th:each="sortType : ${sortTypes}"
+                    th:value="${sortType}"
+                    th:text="${sortType.displayName}"
+                    th:selected="${sortType == selectedSort}">
+            </option>
+        </select>
+    
+        <button type="submit">変更</button>
+    </form>
+
     <h2>タスク一覧</h2>
 
     <ul>
