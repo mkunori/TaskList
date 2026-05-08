@@ -118,6 +118,96 @@ classDiagram
     TaskUpdateForm --> Priority : has
 ```
 
+## シーケンス図
+
+### タスク追加
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant TaskController
+    participant TaskService
+    participant TaskRepository
+    participant H2Database
+
+    User->>Browser: タイトル・期限・優先度を入力して追加
+    Browser->>TaskController: POST /tasks
+    TaskController->>TaskController: 入力チェック
+
+    alt 入力エラーあり
+        TaskController-->>Browser: tasks.html を返す
+        Browser-->>User: エラーメッセージを表示
+    else 入力エラーなし
+        TaskController->>TaskService: addTask(title, dueDate, priority)
+        TaskService->>TaskRepository: save(task)
+        TaskRepository->>H2Database: INSERT INTO tasks ...
+        H2Database-->>TaskRepository: 保存完了
+        TaskRepository-->>TaskService: 保存済みTask
+        TaskService-->>TaskController: 保存完了
+        TaskController-->>Browser: redirect:/
+        Browser-->>User: 一覧画面を再表示
+    end
+```
+
+### タスク更新
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant TaskController
+    participant TaskService
+    participant TaskRepository
+    participant H2Database
+
+    User->>Browser: 編集内容を入力して更新
+    Browser->>TaskController: POST /tasks/{id}/update
+    TaskController->>TaskController: 入力チェック
+
+    alt 入力エラーあり
+        TaskController-->>Browser: edit-task.html を返す
+        Browser-->>User: エラーメッセージを表示
+    else 入力エラーなし
+        TaskController->>TaskService: updateTask(taskUpdateForm)
+        TaskService->>TaskRepository: findById(id)
+        TaskRepository->>H2Database: SELECT * FROM tasks WHERE id = ?
+        H2Database-->>TaskRepository: Task
+        TaskRepository-->>TaskService: Task
+        TaskService->>TaskRepository: save(updatedTask)
+        TaskRepository->>H2Database: UPDATE tasks SET ...
+        H2Database-->>TaskRepository: 更新完了
+        TaskRepository-->>TaskService: 更新済みTask
+        TaskService-->>TaskController: 更新結果
+        TaskController-->>Browser: redirect:/
+        Browser-->>User: 一覧画面を再表示
+    end
+```
+
+### タスク並べ替え
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser
+    participant TaskController
+    participant TaskService
+    participant TaskRepository
+    participant H2Database
+
+    User->>Browser: 並び替え条件を選択して変更
+    Browser->>TaskController: GET /?sort=...
+    TaskController->>TaskService: findTasks(sortType)
+    TaskService->>TaskRepository: findAll()
+    TaskRepository->>H2Database: SELECT * FROM tasks
+    H2Database-->>TaskRepository: タスク一覧
+    TaskRepository-->>TaskService: タスク一覧
+    TaskService->>TaskService: 条件に応じて並び替え
+    TaskService-->>TaskController: 並び替え済みタスク一覧
+    TaskController-->>Browser: tasks.html を返す
+    Browser-->>User: 並び替え結果を表示
+```
+
 ## 処理の流れ
 
 ### タスク一覧表示
