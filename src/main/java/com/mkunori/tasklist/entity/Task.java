@@ -185,4 +185,32 @@ public class Task {
     public void toggleDone() {
         this.done = !this.done;
     }
+
+    /**
+     * 期限日の表示用文字列を返します。
+     *
+     * 期限が未設定の場合は「期限なし」を返します。
+     * 期限が今日より前の場合は「期限: yyyy-MM-dd（期限切れ）」を返します。
+     * 期限が今日の場合は「期限: yyyy-MM-dd（今日）」を返します。
+     * それ以外の場合は「期限: yyyy-MM-dd」を返します。
+     *
+     * @return 期限日の表示用文字列
+     */
+    public String getDueDateLabel() {
+        if (dueDate == null) {
+            return "期限なし";
+        }
+
+        LocalDate today = LocalDate.now();
+
+        if (dueDate.isBefore(today)) {
+            return "期限: " + dueDate + "（期限切れ）";
+        }
+
+        if (dueDate.isEqual(today)) {
+            return "期限: " + dueDate + "（今日）";
+        }
+
+        return "期限: " + dueDate;
+    }
 }

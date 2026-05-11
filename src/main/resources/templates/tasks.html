@@ -154,10 +154,11 @@
             </span>
 
             <!--
-                期限日を表示します。
-                dueDate が null の場合は「期限なし」と表示します。
+                期限日の表示用文字列を表示します。
+                task.dueDateLabel は Taskクラスの getDueDateLabel() に対応します。
+                期限なし、期限切れ、今日が期限などの表示は Java 側で作成しています。
             -->
-            <span th:text="${task.dueDate != null ? '期限: ' + task.dueDate : '期限なし'}"></span>
+            <span th:text="${task.dueDateLabel}"></span>
 
             <!--
                 優先度を表示します。
