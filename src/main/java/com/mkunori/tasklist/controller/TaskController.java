@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.form.TaskForm;
 import com.mkunori.tasklist.form.TaskUpdateForm;
+import com.mkunori.tasklist.service.TaskFilterType;
 import com.mkunori.tasklist.service.TaskService;
 import com.mkunori.tasklist.service.TaskSortType;
 
@@ -47,31 +48,34 @@ public class TaskController {
     /**
      * タスク一覧画面を表示します。
      *
-     * sortパラメータを受け取り、指定された条件で並び替えたタスク一覧をHTMLへ渡します。
-     * sortが指定されていない場合は、登録順で表示します。
+     * filterパラメータとsortパラメータを受け取り、
+     * 指定された条件で絞り込み・並び替えしたタスク一覧をHTMLへ渡します。
      *
+     * @param filterType 絞り込み条件。未指定の場合はすべて表示
      * @param sortType 並び替え条件。未指定の場合は登録順
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
     @GetMapping("/")
     public String showTaskList(
+            @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
             Model model) {
-
-        // Serviceから並び替え済みのタスク一覧を取得して、tasks という名前でHTMLへ渡す
-        model.addAttribute("tasks", taskService.findTasks(sortType));
-
-        // 現在選択中の並び替え条件をHTMLへ渡す
+            
+        // Serviceから絞り込み・並び替え済みのタスク一覧を取得してHTMLへ渡す
+        model.addAttribute("tasks", taskService.findTasks(filterType, sortType));
+            
+        // 現在選択中の表示条件と並び替え条件をHTMLへ渡す
+        model.addAttribute("selectedFilter", filterType);
         model.addAttribute("selectedSort", sortType);
-
+            
         // タスク追加フォーム用の空オブジェクトをHTMLへ渡す
         model.addAttribute("taskForm", new TaskForm());
-
+            
         // src/main/resources/templates/tasks.html を表示する
         return "tasks";
     }
-
+    
     /**
      * 入力されたタスクをDBに保存します。
      *
@@ -90,13 +94,15 @@ public class TaskController {
             
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
-            // エラー時は登録順の一覧を表示する
+            // エラー時は「すべて表示・登録順」で一覧を表示する
+            TaskFilterType filterType = TaskFilterType.ALL;
             TaskSortType sortType = TaskSortType.CREATED;
         
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
-            model.addAttribute("tasks", taskService.findTasks(sortType));
+            model.addAttribute("tasks", taskService.findTasks(filterType, sortType));
         
-            // 現在選択中の並び替え条件をHTMLへ渡す
+            // 現在選択中の表示条件と並び替え条件をHTMLへ渡す
+            model.addAttribute("selectedFilter", filterType);
             model.addAttribute("selectedSort", sortType);
         
             // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
@@ -234,4 +240,16 @@ public class TaskController {
         return TaskSortType.values();
     }
 
+    /**
+     * 画面で使用する絞り込み条件一覧を返します。
+     *
+     * このメソッドで返した値は、tasks.html から
+     * filterTypes という名前で参照できます。
+     *
+     * @return 絞り込み条件一覧
+     */
+    @ModelAttribute("filterTypes")
+    public TaskFilterType[] filterTypes() {
+        return TaskFilterType.values();
+    }
 }

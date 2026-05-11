@@ -62,26 +62,45 @@
 
     <h2>並び替え</h2>
     
+<h2>表示条件</h2>
     <!--
-        タスク一覧の並び替え条件を選ぶフォームです。
-        method="get" にすることで、選択した条件が URL のクエリパラメータとして送信されます。
-        例: /?sort=DUE_DATE
+        タスク一覧の表示条件と並び替え条件を選ぶフォームです。
+        method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
+        例: /?filter=ACTIVE&sort=DUE_DATE
     -->
     <form th:action="@{/}" method="get">
-        <label for="sort">並び替え</label>
-    
-        <!--
-            name="sort" は Controller の @RequestParam(name = "sort") と対応します。
-            selectedSort は、現在選択中の並び替え条件です。
-        -->
-        <select id="sort" name="sort">
-            <option th:each="sortType : ${sortTypes}"
-                    th:value="${sortType}"
-                    th:text="${sortType.displayName}"
-                    th:selected="${sortType == selectedSort}">
-            </option>
-        </select>
-    
+        <div>
+            <label for="filter">表示</label>
+
+            <!--
+                name="filter" は Controller の @RequestParam(name = "filter") と対応します。
+                selectedFilter は、現在選択中の表示条件です。
+            -->
+            <select id="filter" name="filter">
+                <option th:each="filterType : ${filterTypes}"
+                        th:value="${filterType}"
+                        th:text="${filterType.displayName}"
+                        th:selected="${filterType == selectedFilter}">
+                </option>
+            </select>
+        </div>
+
+        <div>
+            <label for="sort">並び替え</label>
+
+            <!--
+                name="sort" は Controller の @RequestParam(name = "sort") と対応します。
+                selectedSort は、現在選択中の並び替え条件です。
+            -->
+            <select id="sort" name="sort">
+                <option th:each="sortType : ${sortTypes}"
+                        th:value="${sortType}"
+                        th:text="${sortType.displayName}"
+                        th:selected="${sortType == selectedSort}">
+                </option>
+            </select>
+        </div>
+
         <button type="submit">変更</button>
     </form>
 

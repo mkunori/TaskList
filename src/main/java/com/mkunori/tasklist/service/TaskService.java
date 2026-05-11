@@ -28,7 +28,7 @@ public class TaskService {
 
     /**
      * コンストラクタです。
-     * 
+     *
      * SpringがTaskRepositoryを自動で渡してくれます。
      *
      * @param taskRepository タスクリポジトリ
@@ -41,33 +41,73 @@ public class TaskService {
      * すべてのタスクを登録順で取得します。
      *
      * 既存の呼び出し箇所を残すためのメソッドです。
-     * 内部では、登録順の並び替え条件を指定して取得しています。
+     * 内部では、すべてのタスクを登録順で取得しています。
      *
      * @return 登録順のタスク一覧
      */
     public List<Task> findAllTasks() {
-        return findTasks(TaskSortType.CREATED);
+        return findTasks(TaskFilterType.ALL, TaskSortType.CREATED);
     }
 
     /**
-     * 指定された並び替え条件でタスク一覧を取得します。
+     * 指定された絞り込み条件と並び替え条件でタスク一覧を取得します。
      *
-     * 今回はDBから全件取得したあと、Java側で並び替えています。
-     * 学習初期では、Comparatorの練習にもなるため理解しやすい方法です。
+     * DBから全件取得したあと、Java側で絞り込みと並び替えをしています。
      *
+     * @param filterType 絞り込み条件
      * @param sortType 並び替え条件
-     * @return 並び替え済みのタスク一覧
+     * @return 絞り込みと並び替えが反映されたタスク一覧
      */
-    public List<Task> findTasks(TaskSortType sortType) {
+    public List<Task> findTasks(TaskFilterType filterType, TaskSortType sortType) {
         // DBからすべてのタスクを取得する
         List<Task> tasks = taskRepository.findAll();
 
+        // まず表示条件で絞り込む
+        List<Task> filteredTasks = filterTasks(tasks, filterType);
+
+        // 次に並び替える
+        return sortTasks(filteredTasks, sortType);
+    }
+
+    /**
+     * タスク一覧を指定された条件で絞り込みます。
+     *
+     * ALLならすべて、ACTIVEなら未完了のみ、DONEなら完了済みのみを返します。
+     *
+     * @param tasks 絞り込み前のタスク一覧
+     * @param filterType 絞り込み条件
+     * @return 絞り込み後のタスク一覧
+     */
+    private List<Task> filterTasks(List<Task> tasks, TaskFilterType filterType) {
+        // filterTypeがnullの場合は、すべて表示として扱う
+        if (filterType == null) {
+            return tasks;
+        }
+
+        return switch (filterType) {
+            case ALL -> tasks;
+            case ACTIVE -> tasks.stream()
+                    .filter(task -> !task.isDone())
+                    .toList();
+            case DONE -> tasks.stream()
+                    .filter(task -> task.isDone())
+                    .toList();
+        };
+    }
+
+    /**
+     * タスク一覧を指定された条件で並び替えます。
+     *
+     * @param tasks 並び替え前のタスク一覧
+     * @param sortType 並び替え条件
+     * @return 並び替え後のタスク一覧
+     */
+    private List<Task> sortTasks(List<Task> tasks, TaskSortType sortType) {
         // sortTypeがnullの場合は、登録順として扱う
         if (sortType == null) {
             return sortByCreated(tasks);
         }
 
-        // 並び替え条件に応じて、返す一覧を変える
         return switch (sortType) {
             case CREATED -> sortByCreated(tasks);
             case DUE_DATE -> sortByDueDate(tasks);
@@ -85,7 +125,7 @@ public class TaskService {
      */
     private List<Task> sortByCreated(List<Task> tasks) {
         return tasks.stream()
-                .sorted(Comparator.comparing(Task::getId))
+                .sorted(Comparator.comparing(task -> task.getId()))
                 .toList();
     }
 
@@ -100,8 +140,26 @@ public class TaskService {
     private List<Task> sortByDueDate(List<Task> tasks) {
         return tasks.stream()
                 .sorted(Comparator.comparing(
-                        Task::getDueDate,
+                        task -> task.getDueDate(),
                         Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
+    /**
+     * タスク一覧を優先度が高い順で並び替えます。
+     *
+     * PriorityのsortOrderを使い、HIGH、MEDIUM、LOW の順に表示します。
+     * 優先度が同じタスクは、登録順で並べます。
+     *
+     * @param tasks 並び替え前のタスク一覧
+     * @return 優先度が高い順に並び替えたタスク一覧
+     */
+    private List<Task> sortByPriority(List<Task> tasks) {
+        return tasks.stream()
+                .sorted(Comparator
+                        .comparing((Task task) -> task.getPriority().getSortOrder())
+                        .reversed()
+                        .thenComparing(task -> task.getId()))
                 .toList();
     }
 
@@ -212,23 +270,5 @@ public class TaskService {
         taskRepository.save(task);
 
         return true;
-    }
-
-    /**
-     * タスク一覧を優先度が高い順で並び替えます。
-     *
-     * PriorityのsortOrderを使い、HIGH、MEDIUM、LOW の順に表示します。
-     * 優先度が同じタスクは、登録順で並べます。
-     *
-     * @param tasks 並び替え前のタスク一覧
-     * @return 優先度が高い順に並び替えたタスク一覧
-     */
-    private List<Task> sortByPriority(List<Task> tasks) {
-        return tasks.stream()
-                .sorted(Comparator
-                        .comparing((Task task) -> task.getPriority().getSortOrder())
-                        .reversed()
-                        .thenComparing(Task::getId))
-                .toList();
     }
 }
