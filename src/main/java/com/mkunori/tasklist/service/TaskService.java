@@ -111,16 +111,27 @@ public class TaskService {
         String lowerKeyword = normalizedKeyword.toLowerCase();
 
         return tasks.stream()
-                .filter(task -> {
-                    String title = task.getTitle();
-                
-                    if (title == null) {
-                        return false;
-                    }
-                
-                    return title.toLowerCase().contains(lowerKeyword);
-                })
+                .filter(task -> containsKeyword(task, lowerKeyword))
                 .toList();
+    }
+
+    /**
+     * タスクのタイトルにキーワードが含まれているかを判定します。
+     *
+     * タイトルが null の場合は、検索対象外として false を返します。
+     *
+     * @param task 検索対象のタスク
+     * @param lowerKeyword 小文字に変換済みの検索キーワード
+     * @return タイトルにキーワードが含まれている場合はtrue
+     */
+    private boolean containsKeyword(Task task, String lowerKeyword) {
+        String title = task.getTitle();
+
+        if (title == null) {
+            return false;
+        }
+
+        return title.toLowerCase().contains(lowerKeyword);
     }
 
     /**
@@ -179,17 +190,35 @@ public class TaskService {
      * PriorityのsortOrderを使い、HIGH、MEDIUM、LOW の順に表示します。
      * 優先度が同じタスクは、登録順で並べます。
      *
+     * 優先度が未設定のタスクがあった場合は、もっとも低い優先度として扱います。
+     *
      * @param tasks 並び替え前のタスク一覧
      * @return 優先度が高い順に並び替えたタスク一覧
      */
     private List<Task> sortByPriority(List<Task> tasks) {
         return tasks.stream()
                 .sorted(Comparator
-                        .comparing((Task task) -> task.getPriority().getSortOrder())
+                        .comparing((Task task) -> getPrioritySortOrder(task))
                         .reversed()
                         .thenComparing(task -> task.getId()))
                 .toList();
     }
+
+    /**
+     * タスクの優先度並び替え用の値を返します。
+     *
+     * 優先度が未設定の場合は、もっとも低い値として扱います。
+     *
+     * @param task 対象タスク
+     * @return 優先度の並び替え用の値
+     */
+    private int getPrioritySortOrder(Task task) {
+        if (task.getPriority() == null) {
+            return 0;
+        }
+
+        return task.getPriority().getSortOrder();
+}
 
     /**
      * 新しいタスクを追加します。
