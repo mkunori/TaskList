@@ -16,7 +16,8 @@ import com.mkunori.tasklist.repository.TaskRepository;
  * タスクに関する処理を担当するサービスクラスです。
  *
  * Serviceは、ControllerとRepositoryの間に入るクラスです。
- * Controllerから依頼を受けて、アプリケーションの処理を実行します。
+ * Controllerから依頼を受けて、タスクの追加、更新、削除、完了状態の切り替え、
+ * 絞り込み、検索、並び替えを実行します。
  */
 @Service
 public class TaskService {
@@ -35,19 +36,6 @@ public class TaskService {
      */
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
-    }
-
-    /**
-     * すべてのタスクを登録順で取得します。
-     *
-     * 既存の呼び出し箇所を残すためのメソッドです。
-     * 内部では、表示条件を「すべて」、並び替え条件を「登録順」、
-     * キーワードなしとして取得しています。
-     *
-     * @return 登録順のタスク一覧
-     */
-    public List<Task> findAllTasks() {
-        return findTasks(TaskFilterType.ALL, TaskSortType.CREATED, "");
     }
 
     /**
@@ -123,7 +111,15 @@ public class TaskService {
         String lowerKeyword = normalizedKeyword.toLowerCase();
 
         return tasks.stream()
-                .filter(task -> task.getTitle().toLowerCase().contains(lowerKeyword))
+                .filter(task -> {
+                    String title = task.getTitle();
+                
+                    if (title == null) {
+                        return false;
+                    }
+                
+                    return title.toLowerCase().contains(lowerKeyword);
+                })
                 .toList();
     }
 

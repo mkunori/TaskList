@@ -21,7 +21,9 @@ import com.mkunori.tasklist.service.TaskSortType;
 import jakarta.validation.Valid;
 
 /**
- * タスク一覧画面の表示、タスク追加、タスク削除、完了状態の切り替え、更新を担当するコントローラです。
+ * タスク一覧画面の表示、タスク追加、更新、削除、完了状態の切り替えを担当するコントローラです。
+ *
+ * 一覧画面では、表示条件による絞り込み、並び替え、キーワード検索も扱います。
  *
  * Controllerは、ブラウザからのリクエストを受け取り、
  * Serviceへ処理を依頼して、次に表示する画面を決めます。
@@ -98,29 +100,29 @@ public class TaskController {
             @Valid @ModelAttribute TaskForm taskForm,
             BindingResult bindingResult,
             Model model) {
-            
+
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
             // エラー時は「すべて表示」「登録順」「キーワードなし」に戻す
             TaskFilterType filterType = TaskFilterType.ALL;
             TaskSortType sortType = TaskSortType.CREATED;
             String keyword = "";
-        
+
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
             model.addAttribute("tasks", taskService.findTasks(filterType, sortType, keyword));
-        
+
             // 現在選択中の表示条件、並び替え条件、検索キーワードをHTMLへ渡す
             model.addAttribute("selectedFilter", filterType);
             model.addAttribute("selectedSort", sortType);
             model.addAttribute("keyword", keyword);
-        
+
             // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
         }
-    
+
         // Serviceにタスク追加処理を依頼する
         taskService.addTask(taskForm.getTitle(), taskForm.getDueDate(), taskForm.getPriority());
-    
+
         // 保存後は一覧画面へリダイレクトする
         return "redirect:/";
     }
