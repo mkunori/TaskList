@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.form.TaskForm;
@@ -89,25 +90,27 @@ public class TaskController {
      * 入力されたタスクをDBに保存します。
      *
      * 入力チェックに成功した場合だけ、Serviceへタスク追加を依頼します。
+     * 操作後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
      * @param taskForm 画面から送信された入力値
      * @param bindingResult 入力チェックの結果
+     * @param filterType 表示条件
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
      * @param model 画面へ値を渡すためのオブジェクト
-     * @return エラーがあれば一覧画面、成功すれば一覧画面へリダイレクト
+     * @return エラーがあれば一覧画面、成功すれば条件を維持して一覧画面へリダイレクト
      */
     @PostMapping("/tasks")
     public String addTask(
             @Valid @ModelAttribute TaskForm taskForm,
             BindingResult bindingResult,
+            @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
+            @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
             Model model) {
 
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
-            // エラー時は「すべて表示」「登録順」「キーワードなし」に戻す
-            TaskFilterType filterType = TaskFilterType.ALL;
-            TaskSortType sortType = TaskSortType.CREATED;
-            String keyword = "";
-
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
             model.addAttribute("tasks", taskService.findTasks(filterType, sortType, keyword));
 
@@ -123,42 +126,55 @@ public class TaskController {
         // Serviceにタスク追加処理を依頼する
         taskService.addTask(taskForm.getTitle(), taskForm.getDueDate(), taskForm.getPriority());
 
-        // 保存後は一覧画面へリダイレクトする
-        return "redirect:/";
+        return redirectToTaskList(filterType, sortType, keyword);
     }
 
     /**
      * 指定されたIDのタスクを削除します。
      *
      * URLに含まれるIDを受け取り、Serviceへ削除処理を依頼します。
+     * 削除後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
      * @param id 削除するタスクのID
-     * @return 一覧画面へリダイレクト
+     * @param filterType 表示条件
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
+     * @return 条件を維持した一覧画面へのリダイレクト
      */
     @PostMapping("/tasks/{id}/delete")
-    public String deleteTask(@PathVariable Long id) {
-        // Serviceに削除処理を依頼する
+    public String deleteTask(
+            @PathVariable Long id,
+            @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
+            @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+
         taskService.deleteTask(id);
 
-        // 削除後は一覧画面へリダイレクトする
-        return "redirect:/";
+        return redirectToTaskList(filterType, sortType, keyword);
     }
 
     /**
      * 指定されたIDのタスクの完了状態を切り替えます。
      *
      * URLに含まれるIDを受け取り、Serviceへ完了状態の切り替えを依頼します。
+     * 処理後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
      * @param id 完了状態を切り替えるタスクのID
-     * @return 一覧画面へリダイレクト
+     * @param filterType 表示条件
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
+     * @return 条件を維持した一覧画面へのリダイレクト
      */
     @PostMapping("/tasks/{id}/toggle")
-    public String toggleTaskDone(@PathVariable Long id) {
-        // Serviceに完了状態の切り替え処理を依頼する
+    public String toggleTaskDone(
+            @PathVariable Long id,
+            @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
+            @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+
         taskService.toggleTaskDone(id);
 
-        // 処理後は一覧画面へ戻る
-        return "redirect:/";
+        return redirectToTaskList(filterType, sortType, keyword);
     }
 
     /**
@@ -167,24 +183,37 @@ public class TaskController {
      * URLに含まれるIDを使って編集対象のタスクを取得し、
      * 編集フォームに値を入れて画面へ渡します。
      *
+     * 一覧画面の表示条件、並び替え条件、検索キーワードも編集画面へ渡し、
+     * 更新後に同じ条件の一覧へ戻れるようにします。
+     *
      * @param id 編集対象のタスクID
+     * @param filterType 表示条件
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 編集画面のテンプレート名。タスクが見つからない場合は一覧画面へリダイレクト
      */
     @GetMapping("/tasks/{id}/edit")
-    public String showEditForm(@PathVariable Long id, Model model) {
+    public String showEditForm(
+            @PathVariable Long id,
+            @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
+            @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            Model model) {
+
         // Serviceから編集画面用のフォームを取得する
         Optional<TaskUpdateForm> optionalForm = taskService.findUpdateFormById(id);
 
-        // 対象タスクが見つからない場合は一覧画面へ戻す
         if (optionalForm.isEmpty()) {
-            return "redirect:/";
+            return redirectToTaskList(filterType, sortType, keyword);
         }
 
         // 編集画面で使うフォームをHTMLへ渡す
         model.addAttribute("taskUpdateForm", optionalForm.get());
+        model.addAttribute("selectedFilter", filterType);
+        model.addAttribute("selectedSort", sortType);
+        model.addAttribute("keyword", keyword);
 
-        // src/main/resources/templates/edit-task.html を表示する
         return "edit-task";
     }
 
@@ -192,37 +221,45 @@ public class TaskController {
      * 編集画面から送信された内容でタスクを更新します。
      *
      * 入力チェックに成功した場合だけ、Serviceへ更新処理を依頼します。
+     * 更新後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
      * @param id URLに含まれるタスクID
      * @param taskUpdateForm 編集画面から送信された入力値
      * @param bindingResult 入力チェックの結果
-     * @return エラーがあれば編集画面、成功すれば一覧画面へリダイレクト
+     * @param filterType 表示条件
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
+     * @param model 画面へ値を渡すためのオブジェクト
+     * @return エラーがあれば編集画面、成功すれば条件を維持して一覧画面へリダイレクト
      */
     @PostMapping("/tasks/{id}/update")
     public String updateTask(
             @PathVariable Long id,
             @Valid @ModelAttribute TaskUpdateForm taskUpdateForm,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
+            @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            Model model) {
 
-        // URLのIDをフォームへ設定する
-        // hidden項目からもidは送られるが、URLの値を優先して使う
         taskUpdateForm.setId(id);
 
-        // 入力チェックでエラーがある場合は、保存せずに編集画面へ戻す
         if (bindingResult.hasErrors()) {
+            model.addAttribute("selectedFilter", filterType);
+            model.addAttribute("selectedSort", sortType);
+            model.addAttribute("keyword", keyword);
+
             return "edit-task";
         }
 
         // Serviceに更新処理を依頼する
         boolean updated = taskService.updateTask(taskUpdateForm);
 
-        // 対象タスクが存在しなかった場合は一覧画面へ戻す
         if (!updated) {
-            return "redirect:/";
+            return redirectToTaskList(filterType, sortType, keyword);
         }
 
-        // 更新後は一覧画面へ戻る
-        return "redirect:/";
+        return redirectToTaskList(filterType, sortType, keyword);
     }
 
     /**
@@ -262,5 +299,34 @@ public class TaskController {
     @ModelAttribute("filterTypes")
     public TaskFilterType[] filterTypes() {
         return TaskFilterType.values();
+    }
+
+    /**
+     * タスク一覧画面へ戻るためのリダイレクトURLを作成します。
+     *
+     * 現在の表示条件、並び替え条件、検索キーワードをURLに含めることで、
+     * 追加・更新・削除などの操作後も同じ条件の一覧へ戻れるようにします。
+     *
+     * @param filterType 表示条件
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
+     * @return 一覧画面へのリダイレクト文字列
+     */
+    private String redirectToTaskList(
+            TaskFilterType filterType,
+            TaskSortType sortType,
+            String keyword) {
+
+        String safeKeyword = keyword == null ? "" : keyword;
+
+        String url = UriComponentsBuilder.fromPath("/")
+                .queryParam("filter", filterType)
+                .queryParam("sort", sortType)
+                .queryParam("keyword", safeKeyword)
+                .build()
+                .encode()
+                .toUriString();
+
+        return "redirect:" + url;
     }
 }

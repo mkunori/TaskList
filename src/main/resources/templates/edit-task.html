@@ -23,6 +23,13 @@
         -->
         <input type="hidden" th:field="*{id}">
 
+        <!--
+            一覧画面へ戻るときに、元の表示条件を維持するための隠し項目です。
+        -->
+        <input type="hidden" name="filter" th:value="${selectedFilter}">
+        <input type="hidden" name="sort" th:value="${selectedSort}">
+        <input type="hidden" name="keyword" th:value="${keyword}">
+
         <div>
             <label for="title">タイトル</label>
 
@@ -71,7 +78,14 @@
         一覧画面へ戻るためのリンクです。
     -->
     <p>
-        <a th:href="@{/}">一覧へ戻る</a>
+        <!--
+            編集前の表示条件を維持したまま一覧へ戻ります。
+        -->
+        <a th:href="@{/(
+                filter=${selectedFilter},
+                sort=${selectedSort},
+                keyword=${keyword}
+            )}">一覧へ戻る</a>
     </p>
 </body>
 

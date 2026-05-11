@@ -56,6 +56,14 @@
                 </option>
             </select>
         </div>
+        
+        <!--
+            現在の表示条件を保持するための隠し項目です。
+            タスク追加後も、同じ絞り込み・並び替え・検索条件の一覧へ戻るために使います。
+        -->
+        <input type="hidden" name="filter" th:value="${selectedFilter}">
+        <input type="hidden" name="sort" th:value="${selectedSort}">
+        <input type="hidden" name="keyword" th:value="${keyword}">
 
         <button type="submit">追加</button>
     </form>
@@ -159,15 +167,27 @@
 
             <!--
                 編集画面へ移動するリンクです。
-                task.id をURLに埋め込んで、Controllerの /tasks/{id}/edit にアクセスします。
+                現在の表示条件もURLに含めて、更新後に同じ一覧へ戻れるようにします。
             -->
-            <a th:href="@{/tasks/{id}/edit(id=${task.id})}">編集</a>
+            <a th:href="@{/tasks/{id}/edit(
+                    id=${task.id},
+                    filter=${selectedFilter},
+                    sort=${selectedSort},
+                    keyword=${keyword}
+                )}">編集</a>
 
             <!--
                 完了状態を切り替えるフォームです。
                 task.id をURLに埋め込んで、Controllerの /tasks/{id}/toggle に送信します。
             -->
             <form th:action="@{/tasks/{id}/toggle(id=${task.id})}" method="post" style="display:inline;">
+                <!--
+                    現在の表示条件を保持するための隠し項目です。
+                -->
+                <input type="hidden" name="filter" th:value="${selectedFilter}">
+                <input type="hidden" name="sort" th:value="${selectedSort}">
+                <input type="hidden" name="keyword" th:value="${keyword}">
+            
                 <button type="submit" th:text="${task.done ? '未完了に戻す' : '完了にする'}"></button>
             </form>
 
@@ -176,6 +196,13 @@
                 task.id をURLに埋め込んで、Controllerの /tasks/{id}/delete に送信します。
             -->
             <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post" style="display:inline;">
+                <!--
+                    現在の表示条件を保持するための隠し項目です。
+                -->
+                <input type="hidden" name="filter" th:value="${selectedFilter}">
+                <input type="hidden" name="sort" th:value="${selectedSort}">
+                <input type="hidden" name="keyword" th:value="${keyword}">
+            
                 <button type="submit">削除</button>
             </form>
         </li>
