@@ -4,210 +4,232 @@
 <head>
     <meta charset="UTF-8">
     <title>TaskList</title>
+
+    <!--
+        static/css/style.css を読み込みます。
+        th:href="@{/css/style.css}" は、Spring Bootの静的ファイルへのパスに対応します。
+    -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
 <body>
     <h1>TaskList</h1>
 
-    <h2>新しいタスクを追加</h2>
-
-    <!--
-        タスク追加フォームです。
-        th:object="${taskForm}" は、Controllerから渡されたTaskFormと対応します。
-    -->
-    <form th:action="@{/tasks}" th:object="${taskForm}" method="post">
-        <div>
-            <label for="title">タイトル</label>
-
-            <!--
-                th:field="*{title}" は taskForm.title と対応します。
-                入力された文字列は、ControllerのTaskFormに入ります。
-            -->
-            <input type="text" id="title" th:field="*{title}">
-        </div>
+    <section>
+        <h2>新しいタスクを追加</h2>
 
         <!--
-            titleに入力エラーがある場合だけ、エラーメッセージを表示します。
+            タスク追加フォームです。
+            th:object="${taskForm}" は、Controllerから渡されたTaskFormと対応します。
         -->
-        <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+        <form th:action="@{/tasks}" th:object="${taskForm}" method="post">
+            <div>
+                <label for="title">タイトル</label>
 
-        <div>
-            <label for="dueDate">期限</label>
+                <!--
+                    th:field="*{title}" は taskForm.title と対応します。
+                    入力された文字列は、ControllerのTaskFormに入ります。
+                -->
+                <input type="text" id="title" th:field="*{title}">
+            </div>
 
             <!--
-                type="date" にすると、ブラウザの日付入力欄になります。
-                th:field="*{dueDate}" は taskForm.dueDate と対応します。
-                未入力の場合、Java側では null として扱われます。
+                titleに入力エラーがある場合だけ、エラーメッセージを表示します。
             -->
-            <input type="date" id="dueDate" th:field="*{dueDate}">
-        </div>
+            <p class="error-message"
+            th:if="${#fields.hasErrors('title')}"
+            th:errors="*{title}">
+            </p>
 
-        <div>
-            <label for="priority">優先度</label>
-        
+            <div>
+                <label for="dueDate">期限</label>
+
+                <!--
+                    type="date" にすると、ブラウザの日付入力欄になります。
+                    th:field="*{dueDate}" は taskForm.dueDate と対応します。
+                    未入力の場合、Java側では null として扱われます。
+                -->
+                <input type="date" id="dueDate" th:field="*{dueDate}">
+            </div>
+
+            <div>
+                <label for="priority">優先度</label>
+            
+                <!--
+                    th:field="*{priority}" は taskForm.priority と対応します。
+                    priorities は Controller の @ModelAttribute から渡されています。
+                -->
+                <select id="priority" th:field="*{priority}">
+                    <option th:each="priority : ${priorities}"
+                            th:value="${priority}"
+                            th:text="${priority.displayName}">
+                    </option>
+                </select>
+            </div>
+            
             <!--
-                th:field="*{priority}" は taskForm.priority と対応します。
-                priorities は Controller の @ModelAttribute から渡されています。
+                現在の表示条件を保持するための隠し項目です。
+                タスク追加後も、同じ絞り込み・並び替え・検索条件の一覧へ戻るために使います。
             -->
-            <select id="priority" th:field="*{priority}">
-                <option th:each="priority : ${priorities}"
-                        th:value="${priority}"
-                        th:text="${priority.displayName}">
-                </option>
-            </select>
-        </div>
-        
-        <!--
-            現在の表示条件を保持するための隠し項目です。
-            タスク追加後も、同じ絞り込み・並び替え・検索条件の一覧へ戻るために使います。
-        -->
-        <input type="hidden" name="filter" th:value="${selectedFilter}">
-        <input type="hidden" name="sort" th:value="${selectedSort}">
-        <input type="hidden" name="keyword" th:value="${keyword}">
+            <input type="hidden" name="filter" th:value="${selectedFilter}">
+            <input type="hidden" name="sort" th:value="${selectedSort}">
+            <input type="hidden" name="keyword" th:value="${keyword}">
 
-        <button type="submit">追加</button>
-    </form>
+            <button type="submit">追加</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>表示条件</h2>
     
-    <h2>表示条件</h2>
-
-    <!--
-        タスク一覧の表示条件、並び替え条件、検索キーワードを指定するフォームです。
-        method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
-        例: /?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
-    -->
-    <form th:action="@{/}" method="get">
-        <div>
-            <label for="filter">表示</label>
-
-            <!--
-                name="filter" は Controller の @RequestParam(name = "filter") と対応します。
-                selectedFilter は、現在選択中の表示条件です。
-            -->
-            <select id="filter" name="filter">
-                <option th:each="filterType : ${filterTypes}"
-                        th:value="${filterType}"
-                        th:text="${filterType.displayName}"
-                        th:selected="${filterType == selectedFilter}">
-                </option>
-            </select>
-        </div>
-
-        <div>
-            <label for="sort">並び替え</label>
-
-            <!--
-                name="sort" は Controller の @RequestParam(name = "sort") と対応します。
-                selectedSort は、現在選択中の並び替え条件です。
-            -->
-            <select id="sort" name="sort">
-                <option th:each="sortType : ${sortTypes}"
-                        th:value="${sortType}"
-                        th:text="${sortType.displayName}"
-                        th:selected="${sortType == selectedSort}">
-                </option>
-            </select>
-        </div>
-
-        <div>
-            <label for="keyword">検索</label>
-
-            <!--
-                name="keyword" は Controller の @RequestParam(name = "keyword") と対応します。
-                valueには現在の検索キーワードを入れて、検索後も入力欄に文字が残るようにします。
-            -->
-            <input type="text"
-                   id="keyword"
-                   name="keyword"
-                   th:value="${keyword}"
-                   placeholder="タイトルで検索">
-        </div>
-
-        <button type="submit">変更</button>
-
         <!--
-            検索条件をリセットするためのリンクです。
-            クリックすると、filter / sort / keyword なしの一覧画面へ戻ります。
+            タスク一覧の表示条件、並び替え条件、検索キーワードを指定するフォームです。
+            method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
+            例: /?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
         -->
-        <a th:href="@{/}">リセット</a>
-    </form>
-
-    <h2>タスク一覧</h2>
-
-    <ul>
-        <!--
-            Controllerから渡された tasks を1件ずつ取り出します。
-            tasks は List<Task> のような一覧データです。
-        -->
-        <li th:each="task : ${tasks}">
-            <!--
-                task.done は Taskクラスの isDone() に対応します。
-                true の場合は「完了」、false の場合は「未完了」と表示します。
-            -->
-            <span th:text="${task.done ? '完了' : '未完了'}"></span>
-
-            <!--
-                task.title は Taskクラスの getTitle() に対応します。
-                完了済みタスクは、見た目でわかるように取り消し線を付けます。
-            -->
-            <span th:text="${task.title}"
-                  th:style="${task.done ? 'text-decoration: line-through;' : ''}">
-            </span>
-
-            <!--
-                期限日の表示用文字列を表示します。
-                task.dueDateLabel は Taskクラスの getDueDateLabel() に対応します。
-                期限なし、期限切れ、今日が期限などの表示は Java 側で作成しています。
-            -->
-            <span th:text="${task.dueDateLabel}"></span>
-
-            <!--
-                優先度を表示します。
-                task.priority は Taskクラスの getPriority() に対応します。
-            -->
-            <span th:text="${'優先度: ' + task.priority.displayName}"></span>
-
-            <!--
-                編集画面へ移動するリンクです。
-                現在の表示条件もURLに含めて、更新後に同じ一覧へ戻れるようにします。
-            -->
-            <a th:href="@{/tasks/{id}/edit(
-                    id=${task.id},
-                    filter=${selectedFilter},
-                    sort=${selectedSort},
-                    keyword=${keyword}
-                )}">編集</a>
-
-            <!--
-                完了状態を切り替えるフォームです。
-                task.id をURLに埋め込んで、Controllerの /tasks/{id}/toggle に送信します。
-            -->
-            <form th:action="@{/tasks/{id}/toggle(id=${task.id})}" method="post" style="display:inline;">
+        <form th:action="@{/}" method="get">
+            <div>
+                <label for="filter">表示</label>
+    
                 <!--
-                    現在の表示条件を保持するための隠し項目です。
+                    name="filter" は Controller の @RequestParam(name = "filter") と対応します。
+                    selectedFilter は、現在選択中の表示条件です。
                 -->
-                <input type="hidden" name="filter" th:value="${selectedFilter}">
-                <input type="hidden" name="sort" th:value="${selectedSort}">
-                <input type="hidden" name="keyword" th:value="${keyword}">
-            
-                <button type="submit" th:text="${task.done ? '未完了に戻す' : '完了にする'}"></button>
-            </form>
-
-            <!--
-                削除フォームです。
-                task.id をURLに埋め込んで、Controllerの /tasks/{id}/delete に送信します。
-            -->
-            <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post" style="display:inline;">
+                <select id="filter" name="filter">
+                    <option th:each="filterType : ${filterTypes}"
+                            th:value="${filterType}"
+                            th:text="${filterType.displayName}"
+                            th:selected="${filterType == selectedFilter}">
+                    </option>
+                </select>
+            </div>
+    
+            <div>
+                <label for="sort">並び替え</label>
+    
                 <!--
-                    現在の表示条件を保持するための隠し項目です。
+                    name="sort" は Controller の @RequestParam(name = "sort") と対応します。
+                    selectedSort は、現在選択中の並び替え条件です。
                 -->
-                <input type="hidden" name="filter" th:value="${selectedFilter}">
-                <input type="hidden" name="sort" th:value="${selectedSort}">
-                <input type="hidden" name="keyword" th:value="${keyword}">
-            
-                <button type="submit">削除</button>
-            </form>
-        </li>
-    </ul>
+                <select id="sort" name="sort">
+                    <option th:each="sortType : ${sortTypes}"
+                            th:value="${sortType}"
+                            th:text="${sortType.displayName}"
+                            th:selected="${sortType == selectedSort}">
+                    </option>
+                </select>
+            </div>
+    
+            <div>
+                <label for="keyword">検索</label>
+    
+                <!--
+                    name="keyword" は Controller の @RequestParam(name = "keyword") と対応します。
+                    valueには現在の検索キーワードを入れて、検索後も入力欄に文字が残るようにします。
+                -->
+                <input type="text"
+                       id="keyword"
+                       name="keyword"
+                       th:value="${keyword}"
+                       placeholder="タイトルで検索">
+            </div>
+    
+            <button type="submit">変更</button>
+    
+            <!--
+                検索条件をリセットするためのリンクです。
+                クリックすると、filter / sort / keyword なしの一覧画面へ戻ります。
+            -->
+            <a th:href="@{/}">リセット</a>
+        </form>
+    </section>
+
+    <section>
+        <h2>タスク一覧</h2>
+    
+        <ul>
+            <!--
+                Controllerから渡された tasks を1件ずつ取り出します。
+            -->
+            <li th:each="task : ${tasks}">
+                <div>
+                    <!--
+                        完了済みの場合は task-done クラスを付けて、薄い色と取り消し線で表示します。
+                    -->
+                    <span class="task-title"
+                        th:classappend="${task.done} ? ' task-done' : ''"
+                        th:text="${task.title}">
+                    </span>
+    
+                    <!--
+                        完了状態を表示します。
+                    -->
+                    <span class="task-meta"
+                        th:text="${task.done ? '完了' : '未完了'}">
+                    </span>
+                </div>
+    
+                <div>
+                    <!--
+                        期限日の表示です。
+                        期限切れや今日が期限の場合は、Java側から返されたCSSクラスを付けます。
+                    -->
+                    <span class="task-meta"
+                        th:classappend="${task.dueDateClass}"
+                        th:text="${task.dueDateLabel}">
+                    </span>
+    
+                    <!--
+                        優先度を表示します。
+                    -->
+                    <span class="task-meta"
+                        th:text="${'優先度: ' + task.priority.displayName}">
+                    </span>
+                </div>
+    
+                <div class="actions">
+                    <!--
+                        編集画面へ移動するリンクです。
+                        現在の表示条件もURLに含めて、更新後に同じ一覧へ戻れるようにします。
+                    -->
+                    <a th:href="@{/tasks/{id}/edit(
+                            id=${task.id},
+                            filter=${selectedFilter},
+                            sort=${selectedSort},
+                            keyword=${keyword}
+                        )}">編集</a>
+    
+                    <!--
+                        完了状態を切り替えるフォームです。
+                    -->
+                    <form class="inline-form"
+                        th:action="@{/tasks/{id}/toggle(id=${task.id})}"
+                        method="post">
+                        <input type="hidden" name="filter" th:value="${selectedFilter}">
+                        <input type="hidden" name="sort" th:value="${selectedSort}">
+                        <input type="hidden" name="keyword" th:value="${keyword}">
+    
+                        <button type="submit"
+                                th:text="${task.done ? '未完了に戻す' : '完了にする'}">
+                        </button>
+                    </form>
+    
+                    <!--
+                        削除フォームです。
+                    -->
+                    <form class="inline-form"
+                        th:action="@{/tasks/{id}/delete(id=${task.id})}"
+                        method="post">
+                        <input type="hidden" name="filter" th:value="${selectedFilter}">
+                        <input type="hidden" name="sort" th:value="${selectedSort}">
+                        <input type="hidden" name="keyword" th:value="${keyword}">
+    
+                        <button type="submit">削除</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+    </section>
 </body>
 
 </html>

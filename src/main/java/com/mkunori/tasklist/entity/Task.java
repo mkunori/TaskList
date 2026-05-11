@@ -213,4 +213,31 @@ public class Task {
 
         return "期限: " + dueDate;
     }
+
+    /**
+     * 期限日の状態に応じたCSSクラス名を返します。
+     *
+     * 期限切れの場合は due-overdue、
+     * 今日が期限の場合は due-today、
+     * それ以外の場合は空文字を返します。
+     *
+     * @return 期限表示用のCSSクラス名
+     */
+    public String getDueDateClass() {
+        if (dueDate == null) {
+            return "";
+        }
+
+        LocalDate today = LocalDate.now();
+
+        if (dueDate.isBefore(today)) {
+            return "due-overdue";
+        }
+
+        if (dueDate.isEqual(today)) {
+            return "due-today";
+        }
+
+        return "";
+    }
 }

@@ -4,6 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <title>タスク編集 - TaskList</title>
+
+    <!--
+        一覧画面と同じCSSを読み込みます。
+    -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 
 <body>
@@ -43,7 +48,10 @@
         <!--
             titleに入力エラーがある場合だけ、エラーメッセージを表示します。
         -->
-        <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+        <p class="error-message"
+        th:if="${#fields.hasErrors('title')}"
+        th:errors="*{title}">
+        </p>
 
         <div>
             <label for="dueDate">期限</label>
