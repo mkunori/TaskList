@@ -59,14 +59,13 @@
 
         <button type="submit">追加</button>
     </form>
-
-    <h2>並び替え</h2>
     
-<h2>表示条件</h2>
+    <h2>表示条件</h2>
+
     <!--
-        タスク一覧の表示条件と並び替え条件を選ぶフォームです。
+        タスク一覧の表示条件、並び替え条件、検索キーワードを指定するフォームです。
         method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
-        例: /?filter=ACTIVE&sort=DUE_DATE
+        例: /?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
     -->
     <form th:action="@{/}" method="get">
         <div>
@@ -101,7 +100,27 @@
             </select>
         </div>
 
+        <div>
+            <label for="keyword">検索</label>
+
+            <!--
+                name="keyword" は Controller の @RequestParam(name = "keyword") と対応します。
+                valueには現在の検索キーワードを入れて、検索後も入力欄に文字が残るようにします。
+            -->
+            <input type="text"
+                   id="keyword"
+                   name="keyword"
+                   th:value="${keyword}"
+                   placeholder="タイトルで検索">
+        </div>
+
         <button type="submit">変更</button>
+
+        <!--
+            検索条件をリセットするためのリンクです。
+            クリックすると、filter / sort / keyword なしの一覧画面へ戻ります。
+        -->
+        <a th:href="@{/}">リセット</a>
     </form>
 
     <h2>タスク一覧</h2>

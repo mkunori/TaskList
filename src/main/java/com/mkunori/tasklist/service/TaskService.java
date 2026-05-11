@@ -41,41 +41,46 @@ public class TaskService {
      * すべてのタスクを登録順で取得します。
      *
      * 既存の呼び出し箇所を残すためのメソッドです。
-     * 内部では、すべてのタスクを登録順で取得しています。
+     * 内部では、表示条件を「すべて」、並び替え条件を「登録順」、
+     * キーワードなしとして取得しています。
      *
      * @return 登録順のタスク一覧
      */
     public List<Task> findAllTasks() {
-        return findTasks(TaskFilterType.ALL, TaskSortType.CREATED);
+        return findTasks(TaskFilterType.ALL, TaskSortType.CREATED, "");
     }
 
     /**
-     * 指定された絞り込み条件と並び替え条件でタスク一覧を取得します。
+     * 指定された表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
-     * DBから全件取得したあと、Java側で絞り込みと並び替えをしています。
+     * 今回はDBから全件取得したあと、Java側で絞り込み、検索、並び替えを行っています。
      *
-     * @param filterType 絞り込み条件
+     * @param filterType 表示条件
      * @param sortType 並び替え条件
-     * @return 絞り込みと並び替えが反映されたタスク一覧
+     * @param keyword 検索キーワード
+     * @return 絞り込み、検索、並び替えを行ったタスク一覧
      */
-    public List<Task> findTasks(TaskFilterType filterType, TaskSortType sortType) {
+    public List<Task> findTasks(TaskFilterType filterType, TaskSortType sortType, String keyword) {
         // DBからすべてのタスクを取得する
         List<Task> tasks = taskRepository.findAll();
 
-        // まず表示条件で絞り込む
+        // まず完了状態で絞り込む
         List<Task> filteredTasks = filterTasks(tasks, filterType);
 
-        // 次に並び替える
-        return sortTasks(filteredTasks, sortType);
+        // 次にキーワードで絞り込む
+        List<Task> searchedTasks = searchTasks(filteredTasks, keyword);
+
+        // 最後に並び替える
+        return sortTasks(searchedTasks, sortType);
     }
 
     /**
-     * タスク一覧を指定された条件で絞り込みます。
+     * 表示条件に応じてタスク一覧を絞り込みます。
      *
-     * ALLならすべて、ACTIVEなら未完了のみ、DONEなら完了済みのみを返します。
+     * ALLなら全件、ACTIVEなら未完了のみ、DONEなら完了済みのみを返します。
      *
      * @param tasks 絞り込み前のタスク一覧
-     * @param filterType 絞り込み条件
+     * @param filterType 表示条件
      * @return 絞り込み後のタスク一覧
      */
     private List<Task> filterTasks(List<Task> tasks, TaskFilterType filterType) {
@@ -96,7 +101,34 @@ public class TaskService {
     }
 
     /**
-     * タスク一覧を指定された条件で並び替えます。
+     * キーワードに応じてタスク一覧を絞り込みます。
+     *
+     * キーワードが空の場合は、検索せずに元の一覧をそのまま返します。
+     * 今回はタスクタイトルにキーワードが含まれているかを調べます。
+     *
+     * @param tasks 検索前のタスク一覧
+     * @param keyword 検索キーワード
+     * @return 検索後のタスク一覧
+     */
+    private List<Task> searchTasks(List<Task> tasks, String keyword) {
+        // keyword が null の場合でも扱えるように、空文字へ変換する
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+        // キーワードが空なら、検索せずにそのまま返す
+        if (normalizedKeyword.isEmpty()) {
+            return tasks;
+        }
+
+        // 大文字小文字を区別しないため、小文字に変換して比較する
+        String lowerKeyword = normalizedKeyword.toLowerCase();
+
+        return tasks.stream()
+                .filter(task -> task.getTitle().toLowerCase().contains(lowerKeyword))
+                .toList();
+    }
+
+    /**
+     * 並び替え条件に応じてタスク一覧を並び替えます。
      *
      * @param tasks 並び替え前のタスク一覧
      * @param sortType 並び替え条件

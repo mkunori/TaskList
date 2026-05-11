@@ -48,11 +48,12 @@ public class TaskController {
     /**
      * タスク一覧画面を表示します。
      *
-     * filterパラメータとsortパラメータを受け取り、
-     * 指定された条件で絞り込み・並び替えしたタスク一覧をHTMLへ渡します。
+     * filterパラメータ、sortパラメータ、keywordパラメータを受け取り、
+     * 指定された条件で絞り込み・検索・並び替えをしたタスク一覧をHTMLへ渡します。
      *
-     * @param filterType 絞り込み条件。未指定の場合はすべて表示
+     * @param filterType 表示条件。未指定の場合はすべて表示
      * @param sortType 並び替え条件。未指定の場合は登録順
+     * @param keyword 検索キーワード。未指定の場合は空文字
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
@@ -60,18 +61,24 @@ public class TaskController {
     public String showTaskList(
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
             Model model) {
-            
-        // Serviceから絞り込み・並び替え済みのタスク一覧を取得してHTMLへ渡す
-        model.addAttribute("tasks", taskService.findTasks(filterType, sortType));
-            
-        // 現在選択中の表示条件と並び替え条件をHTMLへ渡す
+
+        // Serviceから絞り込み・検索・並び替え済みのタスク一覧を取得してHTMLへ渡す
+        model.addAttribute("tasks", taskService.findTasks(filterType, sortType, keyword));
+
+        // 現在選択中の表示条件をHTMLへ渡す
         model.addAttribute("selectedFilter", filterType);
+
+        // 現在選択中の並び替え条件をHTMLへ渡す
         model.addAttribute("selectedSort", sortType);
-            
+
+        // 現在入力されている検索キーワードをHTMLへ渡す
+        model.addAttribute("keyword", keyword);
+
         // タスク追加フォーム用の空オブジェクトをHTMLへ渡す
         model.addAttribute("taskForm", new TaskForm());
-            
+
         // src/main/resources/templates/tasks.html を表示する
         return "tasks";
     }
@@ -94,16 +101,18 @@ public class TaskController {
             
         // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
         if (bindingResult.hasErrors()) {
-            // エラー時は「すべて表示・登録順」で一覧を表示する
+            // エラー時は「すべて表示」「登録順」「キーワードなし」に戻す
             TaskFilterType filterType = TaskFilterType.ALL;
             TaskSortType sortType = TaskSortType.CREATED;
+            String keyword = "";
         
             // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
-            model.addAttribute("tasks", taskService.findTasks(filterType, sortType));
+            model.addAttribute("tasks", taskService.findTasks(filterType, sortType, keyword));
         
-            // 現在選択中の表示条件と並び替え条件をHTMLへ渡す
+            // 現在選択中の表示条件、並び替え条件、検索キーワードをHTMLへ渡す
             model.addAttribute("selectedFilter", filterType);
             model.addAttribute("selectedSort", sortType);
+            model.addAttribute("keyword", keyword);
         
             // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
