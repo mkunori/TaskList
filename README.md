@@ -410,6 +410,60 @@ http://localhost:8080/h2-console
 - User: `sa`
 - Password: （空）
 
+## テスト実行方法
+
+このアプリでは、JUnit と Mockito を使ってテストを作成しています。
+
+現在は主に `TaskService` の単体テストを追加しています。  
+Repository はモックにしているため、DBへ接続せずに Service の処理を確認できます。
+
+### テスト実行コマンド
+
+Windowsの場合：
+
+```bash
+mvnw.cmd test
+```
+
+PowerShellで実行する場合：
+
+```bash
+.\mvnw.cmd test
+```
+
+macOS / Linux の場合：
+
+```bash
+./mvnw test
+```
+
+### VSCodeから実行する場合
+
+VSCodeでは、テストクラスやテストメソッドの左側に表示される実行ボタンからテストできます。
+
+また、Testing ビューからまとめて実行することもできます。
+
+### 現在テストしている主な内容
+
+- タスク一覧取得
+- 完了 / 未完了による絞り込み
+- キーワード検索
+- 期限が近い順の並び替え
+- 優先度が高い順の並び替え
+- タスク追加時の保存処理
+- 完了状態の切り替え
+- タスク更新
+- タスク削除
+
+### テスト対象
+
+```text
+src/test/java/com/mkunori/tasklist
+├─ TaskListApplicationTests.java        // Spring Bootアプリの起動確認テスト
+└─ service
+   └─ TaskServiceTest.java              // TaskServiceの単体テスト
+```
+
 ## 開発メモ
 
 このアプリでは、開発用DBとしてH2を使用しています。  
@@ -456,3 +510,4 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 - `Comparator` を使ったJava側での並び替え
 - Java側でのキーワード検索・絞り込み
 - H2 Databaseを使った開発用DBの利用
+- JUnit / Mockito を使ったService層の単体テスト
