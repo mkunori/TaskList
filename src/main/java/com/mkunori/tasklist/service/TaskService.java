@@ -47,10 +47,10 @@ public class TaskService {
      * DBから指定された匿名ユーザーIDに紐づくタスクだけを取得したあと、
      * Java側で絞り込み、検索、並び替えを行います。
      *
-     * @param ownerId 匿名ユーザーID
+     * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @param sortType 並び替え条件
-     * @param keyword 検索キーワード
+     * @param sortType   並び替え条件
+     * @param keyword    検索キーワード
      * @return 絞り込み、検索、並び替えを行ったタスク一覧
      */
     public List<Task> findTasks(
@@ -77,7 +77,7 @@ public class TaskService {
      *
      * ALLなら全件、ACTIVEなら未完了のみ、DONEなら完了済みのみを返します。
      *
-     * @param tasks 絞り込み前のタスク一覧
+     * @param tasks      絞り込み前のタスク一覧
      * @param filterType 表示条件
      * @return 絞り込み後のタスク一覧
      */
@@ -103,7 +103,7 @@ public class TaskService {
      * キーワードが空の場合は、検索せずに元の一覧をそのまま返します。
      * 今回はタスクタイトルにキーワードが含まれているかを調べます。
      *
-     * @param tasks 検索前のタスク一覧
+     * @param tasks   検索前のタスク一覧
      * @param keyword 検索キーワード
      * @return 検索後のタスク一覧
      */
@@ -126,7 +126,7 @@ public class TaskService {
      *
      * タイトルが null の場合は、検索対象外として false を返します。
      *
-     * @param task 検索対象のタスク
+     * @param task         検索対象のタスク
      * @param lowerKeyword 小文字に変換済みの検索キーワード
      * @return タイトルにキーワードが含まれている場合はtrue
      */
@@ -143,7 +143,7 @@ public class TaskService {
     /**
      * 並び替え条件に応じてタスク一覧を並び替えます。
      *
-     * @param tasks 並び替え前のタスク一覧
+     * @param tasks    並び替え前のタスク一覧
      * @param sortType 並び替え条件
      * @return 並び替え後のタスク一覧
      */
@@ -228,10 +228,10 @@ public class TaskService {
     /**
      * 新しいタスクを追加します。
      *
-     * @param title タスクのタイトル
-     * @param dueDate タスクの期限日。未入力の場合は null
+     * @param title    タスクのタイトル
+     * @param dueDate  タスクの期限日。未入力の場合は null
      * @param priority タスクの優先度
-     * @param ownerId 匿名ユーザーID
+     * @param ownerId  匿名ユーザーID
      */
     public void addTask(String title, LocalDate dueDate, Priority priority, String ownerId) {
         Task task = new Task(title, dueDate, priority, ownerId);
@@ -245,7 +245,7 @@ public class TaskService {
      * タスクIDだけでなく匿名ユーザーIDも条件にすることで、
      * 他のブラウザのタスクを削除できないようにします。
      *
-     * @param id 削除するタスクのID
+     * @param id      削除するタスクのID
      * @param ownerId 匿名ユーザーID
      */
     public void deleteTask(Long id, String ownerId) {
@@ -258,7 +258,7 @@ public class TaskService {
      * タスクIDだけでなく匿名ユーザーIDも条件にすることで、
      * 他のブラウザのタスクを操作できないようにします。
      *
-     * @param id 完了状態を切り替えるタスクのID
+     * @param id      完了状態を切り替えるタスクのID
      * @param ownerId 匿名ユーザーID
      */
     public void toggleTaskDone(Long id, String ownerId) {
@@ -281,7 +281,7 @@ public class TaskService {
      * 指定されたタスクIDと匿名ユーザーIDに一致するタスクだけを取得し、
      * 画面表示用のTaskUpdateFormへ詰め替えます。
      *
-     * @param id 編集対象のタスクID
+     * @param id      編集対象のタスクID
      * @param ownerId 匿名ユーザーID
      * @return 編集画面用フォーム。タスクが見つからない場合は空のOptional
      */
@@ -310,12 +310,11 @@ public class TaskService {
      * 他のブラウザのタスクを更新できないようにします。
      *
      * @param taskUpdateForm 更新フォーム
-     * @param ownerId 匿名ユーザーID
+     * @param ownerId        匿名ユーザーID
      * @return 更新できた場合はtrue、対象タスクが見つからなかった場合はfalse
      */
     public boolean updateTask(TaskUpdateForm taskUpdateForm, String ownerId) {
-        Optional<Task> optionalTask =
-                taskRepository.findByIdAndOwnerId(taskUpdateForm.getId(), ownerId);
+        Optional<Task> optionalTask = taskRepository.findByIdAndOwnerId(taskUpdateForm.getId(), ownerId);
 
         if (optionalTask.isEmpty()) {
             return false;

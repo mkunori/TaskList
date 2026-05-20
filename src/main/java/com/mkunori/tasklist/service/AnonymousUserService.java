@@ -38,7 +38,7 @@ public class AnonymousUserService {
      * Cookieに匿名ユーザーIDが存在する場合は、その値を返します。
      * 存在しない場合は新しいIDを作成し、Cookieへ保存してから返します。
      *
-     * @param request ブラウザからのリクエスト
+     * @param request  ブラウザからのリクエスト
      * @param response ブラウザへのレスポンス
      * @return 匿名ユーザーID
      */
@@ -83,7 +83,7 @@ public class AnonymousUserService {
      * 匿名ユーザーIDをCookieへ保存します。
      *
      * @param response ブラウザへのレスポンス
-     * @param ownerId 匿名ユーザーID
+     * @param ownerId  匿名ユーザーID
      */
     private void addOwnerIdCookie(HttpServletResponse response, String ownerId) {
         Cookie cookie = new Cookie(COOKIE_NAME, ownerId);

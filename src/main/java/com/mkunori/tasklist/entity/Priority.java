@@ -39,7 +39,7 @@ public enum Priority {
      * 優先度を作成します。
      *
      * @param displayName 画面表示用の名前
-     * @param sortOrder 並び替え用の値
+     * @param sortOrder   並び替え用の値
      */
     Priority(String displayName, int sortOrder) {
         this.displayName = displayName;

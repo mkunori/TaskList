@@ -30,7 +30,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * IDだけで取得すると、他の匿名ユーザーのタスクを操作できてしまう可能性があります。
      * そのため、更新・削除・完了切り替えでは ownerId も条件に含めます。
      *
-     * @param id タスクID
+     * @param id      タスクID
      * @param ownerId 匿名ユーザーID
      * @return 条件に一致するタスク。存在しない場合は空のOptional
      */
@@ -39,7 +39,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     /**
      * 指定されたタスクIDと匿名ユーザーIDに一致するタスクを削除します。
      *
-     * @param id タスクID
+     * @param id      タスクID
      * @param ownerId 匿名ユーザーID
      */
     void deleteByIdAndOwnerId(Long id, String ownerId);

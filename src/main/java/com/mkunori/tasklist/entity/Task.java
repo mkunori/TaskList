@@ -85,7 +85,7 @@ public class Task {
      *
      * 新規作成時は、未完了かつ通常優先度のタスクとして作成します。
      *
-     * @param title タスクのタイトル
+     * @param title   タスクのタイトル
      * @param dueDate タスクの期限日
      * @param ownerId このタスクを所有する匿名ユーザーID
      */
@@ -98,10 +98,10 @@ public class Task {
      *
      * 新規作成時は、未完了のタスクとして作成します。
      *
-     * @param title タスクのタイトル
-     * @param dueDate タスクの期限日
+     * @param title    タスクのタイトル
+     * @param dueDate  タスクの期限日
      * @param priority タスクの優先度
-     * @param ownerId このタスクを所有する匿名ユーザーID
+     * @param ownerId  このタスクを所有する匿名ユーザーID
      */
     public Task(String title, LocalDate dueDate, Priority priority, String ownerId) {
         this.title = title;
