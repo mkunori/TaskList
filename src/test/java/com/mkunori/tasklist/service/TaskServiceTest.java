@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -49,6 +50,11 @@ class TaskServiceTest {
     private TaskService taskService;
 
     /**
+     * テスト用の匿名ユーザーIDです。
+     */
+    private static final String TEST_OWNER_ID = "test-owner";
+
+    /**
      * 表示条件がALLの場合、すべてのタスクが取得されることを確認します。
      */
     @Test
@@ -56,9 +62,10 @@ class TaskServiceTest {
         Task task1 = createTask(1L, "Javaを学ぶ", false, null, Priority.MEDIUM);
         Task task2 = createTask(2L, "Springを学ぶ", true, null, Priority.HIGH);
 
-        when(taskRepository.findAll()).thenReturn(List.of(task1, task2));
+        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(task1, task2));
 
         List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
                 TaskFilterType.ALL,
                 TaskSortType.CREATED,
                 "");
@@ -76,9 +83,10 @@ class TaskServiceTest {
         Task undoneTask = createTask(1L, "未完了タスク", false, null, Priority.MEDIUM);
         Task doneTask = createTask(2L, "完了済みタスク", true, null, Priority.MEDIUM);
 
-        when(taskRepository.findAll()).thenReturn(List.of(undoneTask, doneTask));
+        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(undoneTask, doneTask));
 
         List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
                 TaskFilterType.ACTIVE,
                 TaskSortType.CREATED,
                 "");
@@ -96,9 +104,10 @@ class TaskServiceTest {
         Task undoneTask = createTask(1L, "未完了タスク", false, null, Priority.MEDIUM);
         Task doneTask = createTask(2L, "完了済みタスク", true, null, Priority.MEDIUM);
 
-        when(taskRepository.findAll()).thenReturn(List.of(undoneTask, doneTask));
+        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(undoneTask, doneTask));
 
         List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
                 TaskFilterType.DONE,
                 TaskSortType.CREATED,
                 "");
@@ -117,9 +126,10 @@ class TaskServiceTest {
         Task task2 = createTask(2L, "Java Silver復習", false, null, Priority.MEDIUM);
         Task task3 = createTask(3L, "Spring JPA確認", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findAll()).thenReturn(List.of(task1, task2, task3));
+        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(task1, task2, task3));
 
         List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
                 TaskFilterType.ALL,
                 TaskSortType.CREATED,
                 "Spring");
@@ -140,9 +150,10 @@ class TaskServiceTest {
         Task later = createTask(2L, "あと", false, LocalDate.of(2026, 5, 20), Priority.MEDIUM);
         Task earlier = createTask(3L, "先", false, LocalDate.of(2026, 5, 10), Priority.MEDIUM);
 
-        when(taskRepository.findAll()).thenReturn(List.of(noDueDate, later, earlier));
+        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(noDueDate, later, earlier));
 
         List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
                 TaskFilterType.ALL,
                 TaskSortType.DUE_DATE,
                 "");
@@ -161,9 +172,10 @@ class TaskServiceTest {
         Task high = createTask(2L, "高い優先度", false, null, Priority.HIGH);
         Task medium = createTask(3L, "普通の優先度", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findAll()).thenReturn(List.of(low, high, medium));
+        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(low, high, medium));
 
         List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
                 TaskFilterType.ALL,
                 TaskSortType.PRIORITY,
                 "");
@@ -181,9 +193,34 @@ class TaskServiceTest {
         taskService.addTask(
                 "新しいタスク",
                 LocalDate.of(2026, 5, 10),
-                Priority.HIGH);
+                Priority.HIGH,
+                TEST_OWNER_ID);
 
         verify(taskRepository).save(any(Task.class));
+    }
+
+    /**
+     * タスク追加時に、入力値と所有者IDを持つTaskがRepositoryへ保存されることを確認します。
+     */
+    @Test
+    void addTask_savesTaskWithInputValues() {
+        taskService.addTask(
+                "新しいタスク",
+                LocalDate.of(2026, 5, 10),
+                Priority.HIGH,
+                TEST_OWNER_ID);
+
+        ArgumentCaptor<Task> captor = ArgumentCaptor.forClass(Task.class);
+
+        verify(taskRepository).save(captor.capture());
+
+        Task savedTask = captor.getValue();
+
+        assertEquals("新しいタスク", savedTask.getTitle());
+        assertEquals(LocalDate.of(2026, 5, 10), savedTask.getDueDate());
+        assertEquals(Priority.HIGH, savedTask.getPriority());
+        assertEquals(TEST_OWNER_ID, savedTask.getOwnerId());
+        assertFalse(savedTask.isDone());
     }
 
     /**
@@ -193,9 +230,9 @@ class TaskServiceTest {
     void toggleTaskDone_togglesDoneFlag() {
         Task task = createTask(1L, "切り替え対象", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndOwnerId(1L, TEST_OWNER_ID)).thenReturn(Optional.of(task));
 
-        taskService.toggleTaskDone(1L);
+        taskService.toggleTaskDone(1L, TEST_OWNER_ID);
 
         assertTrue(task.isDone());
         verify(taskRepository).save(task);
@@ -214,9 +251,9 @@ class TaskServiceTest {
         form.setDueDate(LocalDate.of(2026, 5, 12));
         form.setPriority(Priority.HIGH);
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        when(taskRepository.findByIdAndOwnerId(1L, TEST_OWNER_ID)).thenReturn(Optional.of(task));
 
-        boolean updated = taskService.updateTask(form);
+        boolean updated = taskService.updateTask(form, TEST_OWNER_ID);
 
         assertTrue(updated);
         assertEquals("変更後", task.getTitle());
@@ -235,21 +272,22 @@ class TaskServiceTest {
         form.setTitle("存在しないタスク");
         form.setPriority(Priority.MEDIUM);
 
-        when(taskRepository.findById(999L)).thenReturn(Optional.empty());
+        when(taskRepository.findByIdAndOwnerId(999L, TEST_OWNER_ID))
+                .thenReturn(Optional.empty());
 
-        boolean updated = taskService.updateTask(form);
+        boolean updated = taskService.updateTask(form, TEST_OWNER_ID);
 
         assertFalse(updated);
     }
 
     /**
-     * タスク削除時に、RepositoryのdeleteByIdが呼ばれることを確認します。
+     * タスク削除時に、RepositoryのdeleteByIdAndOwnerIdが呼ばれることを確認します。
      */
     @Test
-    void deleteTask_callsDeleteById() {
-        taskService.deleteTask(1L);
+    void deleteTask_callsDeleteByIdAndOwnerId() {
+        taskService.deleteTask(1L, TEST_OWNER_ID);
 
-        verify(taskRepository).deleteById(1L);
+        verify(taskRepository).deleteByIdAndOwnerId(1L, TEST_OWNER_ID);
     }
 
     /**
@@ -258,10 +296,10 @@ class TaskServiceTest {
      * Taskのidは自動採番想定のため、通常のsetterは用意していません。
      * テストでは並び替え確認のためにidが必要なので、ReflectionTestUtilsで値を設定しています。
      *
-     * @param id タスクID
-     * @param title タイトル
-     * @param done 完了状態
-     * @param dueDate 期限日
+     * @param id       タスクID
+     * @param title    タイトル
+     * @param done     完了状態
+     * @param dueDate  期限日
      * @param priority 優先度
      * @return テスト用Task
      */
@@ -272,7 +310,7 @@ class TaskServiceTest {
             LocalDate dueDate,
             Priority priority) {
 
-        Task task = new Task(title, dueDate, priority);
+        Task task = new Task(title, dueDate, priority, TEST_OWNER_ID);
 
         ReflectionTestUtils.setField(task, "id", id);
         task.setDone(done);

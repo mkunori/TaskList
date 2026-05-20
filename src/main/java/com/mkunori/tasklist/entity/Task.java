@@ -63,36 +63,51 @@ public class Task {
     private Priority priority;
 
     /**
+     * このタスクを所有する匿名ユーザーIDです。
+     *
+     * ログイン機能は使わず、ブラウザのCookieに保存したIDを使って、
+     * ブラウザごとにタスクを分けます。
+     */
+    @Column(nullable = false)
+    private String ownerId;
+
+    /**
      * JPAが利用する引数なしコンストラクタです。
+     *
+     * Entityでは、JPAが内部でオブジェクトを作成できるように、
+     * 引数なしコンストラクタが必要です。
      */
     public Task() {
     }
 
     /**
-     * タイトルと期限日を指定してタスクを作成します。
+     * タイトル、期限日、所有者IDを指定してタスクを作成します。
      *
      * 新規作成時は、未完了かつ通常優先度のタスクとして作成します。
      *
      * @param title タスクのタイトル
      * @param dueDate タスクの期限日
+     * @param ownerId このタスクを所有する匿名ユーザーID
      */
-    public Task(String title, LocalDate dueDate) {
-        this(title, dueDate, Priority.MEDIUM);
+    public Task(String title, LocalDate dueDate, String ownerId) {
+        this(title, dueDate, Priority.MEDIUM, ownerId);
     }
 
     /**
-     * タイトル、期限日、優先度を指定してタスクを作成します。
+     * タイトル、期限日、優先度、所有者IDを指定してタスクを作成します。
      *
      * 新規作成時は、未完了のタスクとして作成します。
      *
      * @param title タスクのタイトル
      * @param dueDate タスクの期限日
      * @param priority タスクの優先度
+     * @param ownerId このタスクを所有する匿名ユーザーID
      */
-    public Task(String title, LocalDate dueDate, Priority priority) {
+    public Task(String title, LocalDate dueDate, Priority priority, String ownerId) {
         this.title = title;
         this.dueDate = dueDate;
         this.priority = priority;
+        this.ownerId = ownerId;
         this.done = false;
     }
 
@@ -239,5 +254,23 @@ public class Task {
         }
 
         return "";
+    }
+
+    /**
+     * このタスクを所有する匿名ユーザーIDを返します。
+     *
+     * @return 匿名ユーザーID
+     */
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    /**
+     * このタスクを所有する匿名ユーザーIDを設定します。
+     *
+     * @param ownerId 匿名ユーザーID
+     */
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 }

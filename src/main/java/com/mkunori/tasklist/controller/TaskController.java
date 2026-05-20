@@ -15,10 +15,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.form.TaskForm;
 import com.mkunori.tasklist.form.TaskUpdateForm;
+import com.mkunori.tasklist.service.AnonymousUserService;
 import com.mkunori.tasklist.service.TaskFilterType;
 import com.mkunori.tasklist.service.TaskService;
 import com.mkunori.tasklist.service.TaskSortType;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 /**
@@ -38,14 +41,26 @@ public class TaskController {
     private final TaskService taskService;
 
     /**
+     * 匿名ユーザーIDを管理するサービスです。
+     *
+     * Cookieから匿名ユーザーIDを取得し、
+     * 存在しない場合は新しく作成します。
+     */
+    private final AnonymousUserService anonymousUserService;
+
+    /**
      * コンストラクタです。
      *
-     * SpringがTaskServiceを自動で渡してくれます。
+     * SpringがTaskServiceとAnonymousUserServiceを自動で渡してくれます。
      *
      * @param taskService タスクサービス
+     * @param anonymousUserService 匿名ユーザーIDを管理するサービス
      */
-    public TaskController(TaskService taskService) {
+    public TaskController(
+            TaskService taskService,
+            AnonymousUserService anonymousUserService) {
         this.taskService = taskService;
+        this.anonymousUserService = anonymousUserService;
     }
 
     /**
@@ -54,9 +69,13 @@ public class TaskController {
      * filterパラメータ、sortパラメータ、keywordパラメータを受け取り、
      * 指定された条件で絞り込み・検索・並び替えをしたタスク一覧をHTMLへ渡します。
      *
+     * Cookieから匿名ユーザーIDを取得し、そのユーザーに紐づくタスクだけを表示します。
+     *
      * @param filterType 表示条件。未指定の場合はすべて表示
      * @param sortType 並び替え条件。未指定の場合は登録順
      * @param keyword 検索キーワード。未指定の場合は空文字
+     * @param request ブラウザからのリクエスト
+     * @param response ブラウザへのレスポンス
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
@@ -65,24 +84,20 @@ public class TaskController {
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            HttpServletRequest request,
+            HttpServletResponse response,
             Model model) {
 
-        // Serviceから絞り込み・検索・並び替え済みのタスク一覧を取得してHTMLへ渡す
-        model.addAttribute("tasks", taskService.findTasks(filterType, sortType, keyword));
+        // Cookieから匿名ユーザーIDを取得する
+        // 初回アクセスでCookieがない場合は、新しいIDを作成してCookieへ保存する
+        String ownerId = anonymousUserService.getOrCreateOwnerId(request, response);
 
-        // 現在選択中の表示条件をHTMLへ渡す
+        model.addAttribute("tasks", taskService.findTasks(ownerId, filterType, sortType, keyword));
         model.addAttribute("selectedFilter", filterType);
-
-        // 現在選択中の並び替え条件をHTMLへ渡す
         model.addAttribute("selectedSort", sortType);
-
-        // 現在入力されている検索キーワードをHTMLへ渡す
         model.addAttribute("keyword", keyword);
-
-        // タスク追加フォーム用の空オブジェクトをHTMLへ渡す
         model.addAttribute("taskForm", new TaskForm());
 
-        // src/main/resources/templates/tasks.html を表示する
         return "tasks";
     }
     
@@ -92,11 +107,15 @@ public class TaskController {
      * 入力チェックに成功した場合だけ、Serviceへタスク追加を依頼します。
      * 操作後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
+     * Cookieから匿名ユーザーIDを取得し、そのユーザーのタスクとして保存します。
+     *
      * @param taskForm 画面から送信された入力値
      * @param bindingResult 入力チェックの結果
      * @param filterType 表示条件
      * @param sortType 並び替え条件
      * @param keyword 検索キーワード
+     * @param request ブラウザからのリクエスト
+     * @param response ブラウザへのレスポンス
      * @param model 画面へ値を渡すためのオブジェクト
      * @return エラーがあれば一覧画面、成功すれば条件を維持して一覧画面へリダイレクト
      */
@@ -107,24 +126,26 @@ public class TaskController {
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            HttpServletRequest request,
+            HttpServletResponse response,
             Model model) {
 
-        // 入力チェックでエラーがある場合は、保存せずに一覧画面へ戻す
-        if (bindingResult.hasErrors()) {
-            // 一覧画面を再表示するため、タスク一覧をもう一度HTMLへ渡す
-            model.addAttribute("tasks", taskService.findTasks(filterType, sortType, keyword));
+        String ownerId = anonymousUserService.getOrCreateOwnerId(request, response);
 
-            // 現在選択中の表示条件、並び替え条件、検索キーワードをHTMLへ渡す
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("tasks", taskService.findTasks(ownerId, filterType, sortType, keyword));
             model.addAttribute("selectedFilter", filterType);
             model.addAttribute("selectedSort", sortType);
             model.addAttribute("keyword", keyword);
 
-            // redirectではなくtasksを返すことで、エラー情報を画面に表示できる
             return "tasks";
         }
 
-        // Serviceにタスク追加処理を依頼する
-        taskService.addTask(taskForm.getTitle(), taskForm.getDueDate(), taskForm.getPriority());
+        taskService.addTask(
+                taskForm.getTitle(),
+                taskForm.getDueDate(),
+                taskForm.getPriority(),
+                ownerId);
 
         return redirectToTaskList(filterType, sortType, keyword);
     }
@@ -135,10 +156,14 @@ public class TaskController {
      * URLに含まれるIDを受け取り、Serviceへ削除処理を依頼します。
      * 削除後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
+     * Cookieから匿名ユーザーIDを取得し、そのユーザーに紐づくタスクだけを削除対象にします。
+     *
      * @param id 削除するタスクのID
      * @param filterType 表示条件
      * @param sortType 並び替え条件
      * @param keyword 検索キーワード
+     * @param request ブラウザからのリクエスト
+     * @param response ブラウザへのレスポンス
      * @return 条件を維持した一覧画面へのリダイレクト
      */
     @PostMapping("/tasks/{id}/delete")
@@ -146,9 +171,13 @@ public class TaskController {
             @PathVariable Long id,
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
-            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            HttpServletRequest request,
+            HttpServletResponse response) {
 
-        taskService.deleteTask(id);
+        String ownerId = anonymousUserService.getOrCreateOwnerId(request, response);
+
+        taskService.deleteTask(id, ownerId);
 
         return redirectToTaskList(filterType, sortType, keyword);
     }
@@ -159,10 +188,14 @@ public class TaskController {
      * URLに含まれるIDを受け取り、Serviceへ完了状態の切り替えを依頼します。
      * 処理後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
+     * Cookieから匿名ユーザーIDを取得し、そのユーザーに紐づくタスクだけを操作対象にします。
+     *
      * @param id 完了状態を切り替えるタスクのID
      * @param filterType 表示条件
      * @param sortType 並び替え条件
      * @param keyword 検索キーワード
+     * @param request ブラウザからのリクエスト
+     * @param response ブラウザへのレスポンス
      * @return 条件を維持した一覧画面へのリダイレクト
      */
     @PostMapping("/tasks/{id}/toggle")
@@ -170,9 +203,13 @@ public class TaskController {
             @PathVariable Long id,
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
-            @RequestParam(name = "keyword", defaultValue = "") String keyword) {
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            HttpServletRequest request,
+            HttpServletResponse response) {
 
-        taskService.toggleTaskDone(id);
+        String ownerId = anonymousUserService.getOrCreateOwnerId(request, response);
+
+        taskService.toggleTaskDone(id, ownerId);
 
         return redirectToTaskList(filterType, sortType, keyword);
     }
@@ -186,10 +223,14 @@ public class TaskController {
      * 一覧画面の表示条件、並び替え条件、検索キーワードも編集画面へ渡し、
      * 更新後に同じ条件の一覧へ戻れるようにします。
      *
+     * Cookieから匿名ユーザーIDを取得し、そのユーザーに紐づくタスクだけを編集対象にします。
+     *
      * @param id 編集対象のタスクID
      * @param filterType 表示条件
      * @param sortType 並び替え条件
      * @param keyword 検索キーワード
+     * @param request ブラウザからのリクエスト
+     * @param response ブラウザへのレスポンス
      * @param model 画面へ値を渡すためのオブジェクト
      * @return 編集画面のテンプレート名。タスクが見つからない場合は一覧画面へリダイレクト
      */
@@ -199,16 +240,18 @@ public class TaskController {
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            HttpServletRequest request,
+            HttpServletResponse response,
             Model model) {
 
-        // Serviceから編集画面用のフォームを取得する
-        Optional<TaskUpdateForm> optionalForm = taskService.findUpdateFormById(id);
+        String ownerId = anonymousUserService.getOrCreateOwnerId(request, response);
+
+        Optional<TaskUpdateForm> optionalForm = taskService.findUpdateFormById(id, ownerId);
 
         if (optionalForm.isEmpty()) {
             return redirectToTaskList(filterType, sortType, keyword);
         }
 
-        // 編集画面で使うフォームをHTMLへ渡す
         model.addAttribute("taskUpdateForm", optionalForm.get());
         model.addAttribute("selectedFilter", filterType);
         model.addAttribute("selectedSort", sortType);
@@ -223,12 +266,16 @@ public class TaskController {
      * 入力チェックに成功した場合だけ、Serviceへ更新処理を依頼します。
      * 更新後は、現在の表示条件、並び替え条件、検索キーワードを維持したまま一覧へ戻ります。
      *
+     * Cookieから匿名ユーザーIDを取得し、そのユーザーに紐づくタスクだけを更新対象にします。
+     *
      * @param id URLに含まれるタスクID
      * @param taskUpdateForm 編集画面から送信された入力値
      * @param bindingResult 入力チェックの結果
      * @param filterType 表示条件
      * @param sortType 並び替え条件
      * @param keyword 検索キーワード
+     * @param request ブラウザからのリクエスト
+     * @param response ブラウザへのレスポンス
      * @param model 画面へ値を渡すためのオブジェクト
      * @return エラーがあれば編集画面、成功すれば条件を維持して一覧画面へリダイレクト
      */
@@ -240,7 +287,11 @@ public class TaskController {
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            HttpServletRequest request,
+            HttpServletResponse response,
             Model model) {
+
+        String ownerId = anonymousUserService.getOrCreateOwnerId(request, response);
 
         taskUpdateForm.setId(id);
 
@@ -252,8 +303,7 @@ public class TaskController {
             return "edit-task";
         }
 
-        // Serviceに更新処理を依頼する
-        boolean updated = taskService.updateTask(taskUpdateForm);
+        boolean updated = taskService.updateTask(taskUpdateForm, ownerId);
 
         if (!updated) {
             return redirectToTaskList(filterType, sortType, keyword);

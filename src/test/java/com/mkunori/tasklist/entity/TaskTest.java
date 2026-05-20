@@ -17,6 +17,11 @@ import org.junit.jupiter.api.Test;
 class TaskTest {
 
     /**
+     * テスト用の匿名ユーザーIDです。
+     */
+    private static final String TEST_OWNER_ID = "test-owner";
+
+    /**
      * 新しく作成したタスクが未完了状態になることを確認します。
      */
     @Test
@@ -24,9 +29,24 @@ class TaskTest {
         Task task = new Task(
                 "テストタスク",
                 LocalDate.of(2026, 5, 10),
-                Priority.MEDIUM);
+                Priority.MEDIUM,
+                TEST_OWNER_ID);
 
         assertFalse(task.isDone());
+    }
+
+    /**
+     * 新しく作成したタスクに所有者IDが設定されることを確認します。
+     */
+    @Test
+    void constructor_setsOwnerId() {
+        Task task = new Task(
+                "テストタスク",
+                LocalDate.of(2026, 5, 10),
+                Priority.MEDIUM,
+                TEST_OWNER_ID);
+
+        assertEquals(TEST_OWNER_ID, task.getOwnerId());
     }
 
     /**
@@ -37,7 +57,8 @@ class TaskTest {
         Task task = new Task(
                 "テストタスク",
                 null,
-                Priority.MEDIUM);
+                Priority.MEDIUM,
+                TEST_OWNER_ID);
 
         task.toggleDone();
 
@@ -52,7 +73,8 @@ class TaskTest {
         Task task = new Task(
                 "テストタスク",
                 null,
-                Priority.MEDIUM);
+                Priority.MEDIUM,
+                TEST_OWNER_ID);
 
         task.toggleDone();
         task.toggleDone();
@@ -68,7 +90,8 @@ class TaskTest {
         Task task = new Task(
                 "期限なしタスク",
                 null,
-                Priority.MEDIUM);
+                Priority.MEDIUM,
+                TEST_OWNER_ID);
 
         assertEquals("期限なし", task.getDueDateLabel());
     }
@@ -83,7 +106,8 @@ class TaskTest {
         Task task = new Task(
                 "期限切れタスク",
                 yesterday,
-                Priority.HIGH);
+                Priority.HIGH,
+                TEST_OWNER_ID);
 
         assertEquals("期限: " + yesterday + "（期限切れ）", task.getDueDateLabel());
     }
@@ -98,7 +122,8 @@ class TaskTest {
         Task task = new Task(
                 "今日が期限のタスク",
                 today,
-                Priority.HIGH);
+                Priority.HIGH,
+                TEST_OWNER_ID);
 
         assertEquals("期限: " + today + "（今日）", task.getDueDateLabel());
     }
@@ -113,7 +138,8 @@ class TaskTest {
         Task task = new Task(
                 "未来期限のタスク",
                 tomorrow,
-                Priority.LOW);
+                Priority.LOW,
+                TEST_OWNER_ID);
 
         assertEquals("期限: " + tomorrow, task.getDueDateLabel());
     }
@@ -126,7 +152,8 @@ class TaskTest {
         Task task = new Task(
                 "期限切れタスク",
                 LocalDate.now().minusDays(1),
-                Priority.HIGH);
+                Priority.HIGH,
+                TEST_OWNER_ID);
 
         assertEquals("due-overdue", task.getDueDateClass());
     }
@@ -139,7 +166,8 @@ class TaskTest {
         Task task = new Task(
                 "今日が期限のタスク",
                 LocalDate.now(),
-                Priority.HIGH);
+                Priority.HIGH,
+                TEST_OWNER_ID);
 
         assertEquals("due-today", task.getDueDateClass());
     }
@@ -152,7 +180,8 @@ class TaskTest {
         Task task = new Task(
                 "期限なしタスク",
                 null,
-                Priority.MEDIUM);
+                Priority.MEDIUM,
+                TEST_OWNER_ID);
 
         assertEquals("", task.getDueDateClass());
     }
@@ -165,7 +194,8 @@ class TaskTest {
         Task task = new Task(
                 "未来期限のタスク",
                 LocalDate.now().plusDays(1),
-                Priority.LOW);
+                Priority.LOW,
+                TEST_OWNER_ID);
 
         assertEquals("", task.getDueDateClass());
     }

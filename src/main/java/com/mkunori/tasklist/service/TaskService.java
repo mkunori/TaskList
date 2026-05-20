@@ -18,6 +18,9 @@ import com.mkunori.tasklist.repository.TaskRepository;
  * Serviceは、ControllerとRepositoryの間に入るクラスです。
  * Controllerから依頼を受けて、タスクの追加、更新、削除、完了状態の切り替え、
  * 絞り込み、検索、並び替えを実行します。
+ *
+ * このアプリではログイン機能を使わず、Cookieに保存した匿名ユーザーIDを使って、
+ * ブラウザごとにタスクを分けています。
  */
 @Service
 public class TaskService {
@@ -39,18 +42,25 @@ public class TaskService {
     }
 
     /**
-     * 指定された表示条件、並び替え条件、キーワードでタスク一覧を取得します。
+     * 指定された匿名ユーザーID、表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
-     * 今回はDBから全件取得したあと、Java側で絞り込み、検索、並び替えを行っています。
+     * DBから指定された匿名ユーザーIDに紐づくタスクだけを取得したあと、
+     * Java側で絞り込み、検索、並び替えを行います。
      *
+     * @param ownerId 匿名ユーザーID
      * @param filterType 表示条件
      * @param sortType 並び替え条件
      * @param keyword 検索キーワード
      * @return 絞り込み、検索、並び替えを行ったタスク一覧
      */
-    public List<Task> findTasks(TaskFilterType filterType, TaskSortType sortType, String keyword) {
-        // DBからすべてのタスクを取得する
-        List<Task> tasks = taskRepository.findAll();
+    public List<Task> findTasks(
+            String ownerId,
+            TaskFilterType filterType,
+            TaskSortType sortType,
+            String keyword) {
+
+        // この匿名ユーザーIDに紐づくタスクだけを取得する
+        List<Task> tasks = taskRepository.findByOwnerId(ownerId);
 
         // まず完了状態で絞り込む
         List<Task> filteredTasks = filterTasks(tasks, filterType);
@@ -72,7 +82,6 @@ public class TaskService {
      * @return 絞り込み後のタスク一覧
      */
     private List<Task> filterTasks(List<Task> tasks, TaskFilterType filterType) {
-        // filterTypeがnullの場合は、すべて表示として扱う
         if (filterType == null) {
             return tasks;
         }
@@ -83,7 +92,7 @@ public class TaskService {
                     .filter(task -> !task.isDone())
                     .toList();
             case DONE -> tasks.stream()
-                    .filter(task -> task.isDone())
+                    .filter(Task::isDone)
                     .toList();
         };
     }
@@ -99,15 +108,12 @@ public class TaskService {
      * @return 検索後のタスク一覧
      */
     private List<Task> searchTasks(List<Task> tasks, String keyword) {
-        // keyword が null の場合でも扱えるように、空文字へ変換する
         String normalizedKeyword = keyword == null ? "" : keyword.trim();
 
-        // キーワードが空なら、検索せずにそのまま返す
         if (normalizedKeyword.isEmpty()) {
             return tasks;
         }
 
-        // 大文字小文字を区別しないため、小文字に変換して比較する
         String lowerKeyword = normalizedKeyword.toLowerCase();
 
         return tasks.stream()
@@ -142,7 +148,6 @@ public class TaskService {
      * @return 並び替え後のタスク一覧
      */
     private List<Task> sortTasks(List<Task> tasks, TaskSortType sortType) {
-        // sortTypeがnullの場合は、登録順として扱う
         if (sortType == null) {
             return sortByCreated(tasks);
         }
@@ -164,7 +169,7 @@ public class TaskService {
      */
     private List<Task> sortByCreated(List<Task> tasks) {
         return tasks.stream()
-                .sorted(Comparator.comparing(task -> task.getId()))
+                .sorted(Comparator.comparing(Task::getId))
                 .toList();
     }
 
@@ -179,7 +184,7 @@ public class TaskService {
     private List<Task> sortByDueDate(List<Task> tasks) {
         return tasks.stream()
                 .sorted(Comparator.comparing(
-                        task -> task.getDueDate(),
+                        Task::getDueDate,
                         Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
     }
@@ -200,7 +205,7 @@ public class TaskService {
                 .sorted(Comparator
                         .comparing((Task task) -> getPrioritySortOrder(task))
                         .reversed()
-                        .thenComparing(task -> task.getId()))
+                        .thenComparing(Task::getId))
                 .toList();
     }
 
@@ -218,80 +223,78 @@ public class TaskService {
         }
 
         return task.getPriority().getSortOrder();
-}
+    }
 
     /**
      * 新しいタスクを追加します。
-     * 
-     * 画面から受け取ったタイトルと期限日を使ってTaskエンティティを作成し、
-     * DBへ保存します。
      *
      * @param title タスクのタイトル
      * @param dueDate タスクの期限日。未入力の場合は null
      * @param priority タスクの優先度
+     * @param ownerId 匿名ユーザーID
      */
-    public void addTask(String title, LocalDate dueDate, Priority priority) {
-        // フォーム入力値から、DB保存用のEntityを作成する
-        Task task = new Task(title, dueDate, priority);
+    public void addTask(String title, LocalDate dueDate, Priority priority, String ownerId) {
+        Task task = new Task(title, dueDate, priority, ownerId);
 
-        // Repositoryを使ってDBへ保存する
         taskRepository.save(task);
     }
 
     /**
      * 指定されたIDのタスクを削除します。
      *
+     * タスクIDだけでなく匿名ユーザーIDも条件にすることで、
+     * 他のブラウザのタスクを削除できないようにします。
+     *
      * @param id 削除するタスクのID
+     * @param ownerId 匿名ユーザーID
      */
-    public void deleteTask(Long id) {
-        taskRepository.deleteById(id);
+    public void deleteTask(Long id, String ownerId) {
+        taskRepository.deleteByIdAndOwnerId(id, ownerId);
     }
 
     /**
      * 指定されたIDのタスクの完了状態を切り替えます。
      *
+     * タスクIDだけでなく匿名ユーザーIDも条件にすることで、
+     * 他のブラウザのタスクを操作できないようにします。
+     *
      * @param id 完了状態を切り替えるタスクのID
+     * @param ownerId 匿名ユーザーID
      */
-    public void toggleTaskDone(Long id) {
-        // IDを使ってDBからタスクを1件探す
-        Optional<Task> optionalTask = taskRepository.findById(id);
+    public void toggleTaskDone(Long id, String ownerId) {
+        Optional<Task> optionalTask = taskRepository.findByIdAndOwnerId(id, ownerId);
 
-        // タスクが見つからなかった場合は、何もしない
         if (optionalTask.isEmpty()) {
             return;
         }
 
-        // OptionalからTaskを取り出す
         Task task = optionalTask.get();
 
-        // Entityに用意したメソッドで、true/falseを反転する
         task.toggleDone();
 
-        // 変更したEntityをDBへ保存する
         taskRepository.save(task);
     }
 
     /**
      * 編集画面に表示するためのフォームを作成します。
-     * 
-     * 指定されたIDのタスクをDBから取得し、
+     *
+     * 指定されたタスクIDと匿名ユーザーIDに一致するタスクだけを取得し、
      * 画面表示用のTaskUpdateFormへ詰め替えます。
      *
      * @param id 編集対象のタスクID
+     * @param ownerId 匿名ユーザーID
      * @return 編集画面用フォーム。タスクが見つからない場合は空のOptional
      */
-    public Optional<TaskUpdateForm> findUpdateFormById(Long id) {
-        // IDを使ってDBからタスクを探す
-        Optional<Task> optionalTask = taskRepository.findById(id);
+    public Optional<TaskUpdateForm> findUpdateFormById(Long id, String ownerId) {
+        Optional<Task> optionalTask = taskRepository.findByIdAndOwnerId(id, ownerId);
 
-        // タスクが見つからなければ空のOptionalを返す
         if (optionalTask.isEmpty()) {
             return Optional.empty();
         }
 
-        // Entityからフォームへ値を詰め替える
         Task task = optionalTask.get();
         TaskUpdateForm form = new TaskUpdateForm();
+
         form.setId(task.getId());
         form.setTitle(task.getTitle());
         form.setDueDate(task.getDueDate());
@@ -302,28 +305,28 @@ public class TaskService {
 
     /**
      * 指定されたタスクのタイトル、期限日、優先度を更新します。
-     * 
-     * 更新対象のタスクをDBから取得し、フォームの値で上書きして保存します。
+     *
+     * タスクIDだけでなく匿名ユーザーIDも条件にすることで、
+     * 他のブラウザのタスクを更新できないようにします。
      *
      * @param taskUpdateForm 更新フォーム
+     * @param ownerId 匿名ユーザーID
      * @return 更新できた場合はtrue、対象タスクが見つからなかった場合はfalse
      */
-    public boolean updateTask(TaskUpdateForm taskUpdateForm) {
-        // フォームに入っているIDを使って、更新対象のタスクを探す
-        Optional<Task> optionalTask = taskRepository.findById(taskUpdateForm.getId());
+    public boolean updateTask(TaskUpdateForm taskUpdateForm, String ownerId) {
+        Optional<Task> optionalTask =
+                taskRepository.findByIdAndOwnerId(taskUpdateForm.getId(), ownerId);
 
-        // 対象タスクが存在しない場合は更新できない
         if (optionalTask.isEmpty()) {
             return false;
         }
 
-        // DBから取得したEntityを、フォームの値で更新する
         Task task = optionalTask.get();
+
         task.setTitle(taskUpdateForm.getTitle());
         task.setDueDate(taskUpdateForm.getDueDate());
         task.setPriority(taskUpdateForm.getPriority());
 
-        // 変更したEntityをDBへ保存する
         taskRepository.save(task);
 
         return true;
