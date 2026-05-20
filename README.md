@@ -3,7 +3,9 @@
 シンプルなタスク管理Webアプリです。  
 Spring Boot を用いたWebアプリ開発の学習として作成しました。
 
-Java / Spring Boot / JPA / H2 Database を使い、タスクの登録・一覧表示・更新・削除・完了状態の切り替え、期限・優先度の管理、絞り込み、キーワード検索、並び替え機能を実装しています。
+Java / Spring Boot / JPA / H2 Database / PostgreSQL を使い、タスクの登録・一覧表示・更新・削除・完了状態の切り替え、期限・優先度の管理、絞り込み、キーワード検索、並び替え機能を実装しています。
+
+また、ログイン機能の代わりに Cookie ベースの匿名ユーザー識別を導入し、ブラウザごとにタスクを分離しています。
 
 ## アプリケーション概要
 
@@ -61,6 +63,10 @@ Spring Boot の基本的な構成に加えて、Controller / Service / Repositor
   - 期限切れタスクの強調表示
   - 今日が期限のタスクの強調表示
   - エラーメッセージの強調表示
+- Cookieベースの匿名ユーザー識別
+  - ログインなしでブラウザごとにタスクを分離
+  - Cookieに保存した匿名ユーザーIDを使用
+  - DBでは `owner_id` によってタスクの所有者を管理
 
 ## 使用技術
 
@@ -69,6 +75,7 @@ Spring Boot の基本的な構成に加えて、Controller / Service / Repositor
 - Spring Data JPA（Hibernate）
 - Thymeleaf
 - H2 Database（開発用）
+- PostgreSQL（実DB確認用）
 - Maven
 - HTML / CSS
 - JUnit
@@ -91,6 +98,7 @@ src/main/java/com/mkunori/tasklist
 ├─ repository
 │  └─ TaskRepository.java          // Spring Data JPAでTaskをDB操作する
 └─ service
+   ├─ AnonymousUserService.java    // Cookieベースの匿名ユーザーIDを管理する
    ├─ TaskFilterType.java          // タスク一覧の表示条件を表すenum
    ├─ TaskService.java             // タスク追加・更新・削除・検索・絞り込み・並び替えなどの処理を担当する
    └─ TaskSortType.java            // タスク一覧の並び替え条件を表すenum
@@ -102,7 +110,8 @@ src/main/resources
 ├─ templates
 │  ├─ tasks.html                   // タスク一覧画面
 │  └─ edit-task.html               // タスク編集画面
-└─ application.properties          // アプリケーション設定とH2 Database設定
+├─ application.properties          // H2 Database用の基本設定
+└─ application-postgres.properties // PostgreSQL用プロファイル設定
 ```
 
 ## パッケージの役割
@@ -121,6 +130,7 @@ src/main/resources
 classDiagram
     class TaskListApplication
     class TaskController
+    class AnonymousUserService
     class TaskService
     class TaskRepository
     class Task
@@ -131,6 +141,7 @@ classDiagram
     class TaskSortType
 
     TaskListApplication ..> TaskController : scans
+    TaskController --> AnonymousUserService : gets ownerId
     TaskController --> TaskService : uses
     TaskController --> TaskForm : receives
     TaskController --> TaskUpdateForm : receives
@@ -145,6 +156,24 @@ classDiagram
     Task --> Priority : has
     TaskForm --> Priority : has
     TaskUpdateForm --> Priority : has
+```
+
+## 匿名ユーザー識別
+
+このアプリでは、ログイン機能は実装していません。  
+代わりに、ブラウザのCookieに匿名ユーザーIDを保存し、そのIDを使ってブラウザごとにタスクを分離しています。
+
+初回アクセス時にCookieが存在しない場合は、サーバ側で匿名ユーザーIDを作成し、Cookieへ保存します。  
+以降は、そのCookieの値を使ってタスクを取得・追加・更新・削除します。
+
+```text
+ブラウザ
+  ↓ Cookie
+匿名ユーザーID
+  ↓
+Task.ownerId
+  ↓
+自分のタスクだけ表示・操作
 ```
 
 ## シーケンス図
@@ -220,16 +249,19 @@ sequenceDiagram
     actor User
     participant Browser
     participant TaskController
+    participant AnonymousUserService
     participant TaskService
     participant TaskRepository
-    participant H2Database
+    participant Database
 
     User->>Browser: 表示条件・並び替え・キーワードを指定
     Browser->>TaskController: GET /?filter=...&sort=...&keyword=...
-    TaskController->>TaskService: findTasks(filterType, sortType, keyword)
-    TaskService->>TaskRepository: findAll()
-    TaskRepository->>H2Database: SELECT * FROM tasks
-    H2Database-->>TaskRepository: タスク一覧
+    TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
+    AnonymousUserService-->>TaskController: ownerId
+    TaskController->>TaskService: findTasks(ownerId, filterType, sortType, keyword)
+    TaskService->>TaskRepository: findByOwnerId(ownerId)
+    TaskRepository->>Database: SELECT * FROM tasks WHERE owner_id = ?
+    Database-->>TaskRepository: タスク一覧
     TaskRepository-->>TaskService: タスク一覧
     TaskService->>TaskService: 表示条件で絞り込み
     TaskService->>TaskService: キーワードで検索
@@ -428,12 +460,6 @@ Windowsの場合：
 mvnw.cmd test
 ```
 
-### VSCodeから実行する場合
-
-VSCodeでは、テストクラスやテストメソッドの左側に表示される実行ボタンからテストできます。
-
-また、Testing ビューからまとめて実行することもできます。
-
 ### 現在テストしている主な内容
 
 - Spring Bootアプリケーションの起動確認
@@ -460,6 +486,9 @@ VSCodeでは、テストクラスやテストメソッドの左側に表示さ�
   - 完了状態の切り替え
   - タスク削除
   - 操作後のリダイレクト
+- AnonymousUserServiceの単体テスト
+  - Cookieに匿名ユーザーIDがある場合はそのIDを返す
+  - Cookieがない場合は新しいIDを作成してCookieへ保存する
 
 ### テスト対象
 
@@ -471,6 +500,7 @@ src/test/java/com/mkunori/tasklist
 ├─ entity
 │  └─ TaskTest.java                     // Taskエンティティの単体テスト
 └─ service
+   ├─ AnonymousUserServiceTest.java     // Cookieベース匿名ユーザーID管理の単体テスト
    └─ TaskServiceTest.java              // TaskServiceの単体テスト
 ```
 
@@ -492,12 +522,17 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 
 ## 今後の改善予定
 
-- PostgreSQL への移行
-- ログイン機能
-- RepositoryやDB側での検索・並び替え
+- RepositoryやDB側での検索・絞り込み・並び替え
+- PostgreSQL環境での動作確認強化
+- テストコードの拡充
+  - Repository層のテスト
+  - Formバリデーションのテスト
 - 画面デザインの改善
   - カード型レイアウト
   - Microsoft To Do のような見やすいタスク表示
+- デプロイ準備
+  - 本番用プロファイルの整理
+  - 環境変数による設定管理
 
 ## 学習ポイント
 
@@ -522,3 +557,7 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 - JUnit / Mockito を使った単体テスト
 - MockMvc を使ったController層のテスト
 - ServiceをモックにしたWeb層のテスト
+- Cookieを使った匿名ユーザー識別
+- ownerIdによるブラウザごとのタスク分離
+- PostgreSQLプロファイルを使ったDB切り替え
+- 環境変数を使ったDB接続情報の管理
