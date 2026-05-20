@@ -2,6 +2,8 @@ package com.mkunori.tasklist.form;
 
 import java.time.LocalDate;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
 import com.mkunori.tasklist.entity.Priority;
 
 import jakarta.validation.constraints.NotBlank;
@@ -33,7 +35,9 @@ public class TaskUpdateForm {
      * 更新後の期限日です。
      *
      * 期限なしも許可するため、未入力の場合は null になります。
+     * HTMLの input type="date" と対応するため、yyyy-MM-dd形式で扱います。
      */
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dueDate;
 
     /**
