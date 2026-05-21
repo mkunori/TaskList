@@ -45,8 +45,8 @@ public class TaskService {
      * 指定された匿名ユーザーID、表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
      * DBから指定された匿名ユーザーIDに紐づくタスクを取得します。
-     * 完了状態による絞り込みとキーワード検索はRepository側で行い、
-     * 並び替えはJava側で行います。
+     * 完了状態による絞り込み、キーワード検索、登録順の並び替えはRepository側で行い、
+     * 期限順と優先度順の並び替えはJava側で行います。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
@@ -56,11 +56,81 @@ public class TaskService {
      */
     public List<Task> findTasks(String ownerId, TaskFilterType filterType, TaskSortType sortType, String keyword) {
 
-        // 表示条件とキーワードに応じて、Repository側で取得対象を変える
+        if (sortType == TaskSortType.CREATED || sortType == null) {
+            return findTasksByFilterAndKeywordOrderByCreated(ownerId, filterType, keyword);
+        }
+
         List<Task> tasks = findTasksByFilterAndKeyword(ownerId, filterType, keyword);
 
-        // 並び替えは、まだJava側で行う
         return sortTasks(tasks, sortType);
+    }
+
+    /**
+     * 表示条件とキーワードに応じて、登録順でRepositoryからタスク一覧を取得します。
+     *
+     * キーワードが空の場合は、表示条件だけで取得します。
+     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
+     * どちらの場合も、IDの昇順で取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    検索キーワード
+     * @return 登録順のタスク一覧
+     */
+    private List<Task> findTasksByFilterAndKeywordOrderByCreated(String ownerId, TaskFilterType filterType, String keyword) {
+
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+        if (normalizedKeyword.isEmpty()) {
+            return findTasksByFilterOrderByCreated(ownerId, filterType);
+        }
+
+        return findTasksByFilterAndNonEmptyKeywordOrderByCreated(
+                ownerId,
+                filterType,
+                normalizedKeyword);
+    }
+
+    /**
+     * 表示条件に応じて、登録順でRepositoryからタスク一覧を取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @return 登録順のタスク一覧
+     */
+    private List<Task> findTasksByFilterOrderByCreated(String ownerId, TaskFilterType filterType) {
+
+        if (filterType == null) {
+            return taskRepository.findByOwnerIdOrderByIdAsc(ownerId);
+        }
+
+        return switch (filterType) {
+            case ALL -> taskRepository.findByOwnerIdOrderByIdAsc(ownerId);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByIdAsc(ownerId, false);
+            case DONE -> taskRepository.findByOwnerIdAndDoneOrderByIdAsc(ownerId, true);
+        };
+    }
+
+    /**
+     * 表示条件と空ではないキーワードに応じて、
+     * 登録順でRepositoryからタスク一覧を取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    空ではない検索キーワード
+     * @return 登録順のタスク一覧
+     */
+    private List<Task> findTasksByFilterAndNonEmptyKeywordOrderByCreated(String ownerId, TaskFilterType filterType, String keyword) {
+
+        if (filterType == null) {
+            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, keyword);
+        }
+
+        return switch (filterType) {
+            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, keyword);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, false, keyword);
+            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, true, keyword);
+        };
     }
 
     /**
@@ -128,34 +198,22 @@ public class TaskService {
     /**
      * 並び替え条件に応じてタスク一覧を並び替えます。
      *
+     * 登録順はRepository側で並び替えるため、このメソッドでは扱いません。
+     *
      * @param tasks    並び替え前のタスク一覧
      * @param sortType 並び替え条件
      * @return 並び替え後のタスク一覧
      */
     private List<Task> sortTasks(List<Task> tasks, TaskSortType sortType) {
-        if (sortType == null) {
-            return sortByCreated(tasks);
+        if (sortType == null || sortType == TaskSortType.CREATED) {
+            return tasks;
         }
 
         return switch (sortType) {
-            case CREATED -> sortByCreated(tasks);
             case DUE_DATE -> sortByDueDate(tasks);
             case PRIORITY -> sortByPriority(tasks);
+            case CREATED -> tasks;
         };
-    }
-
-    /**
-     * タスク一覧を登録順で並び替えます。
-     *
-     * idは自動採番されるため、idの昇順にすると登録が古い順になります。
-     *
-     * @param tasks 並び替え前のタスク一覧
-     * @return 登録順に並び替えたタスク一覧
-     */
-    private List<Task> sortByCreated(List<Task> tasks) {
-        return tasks.stream()
-                .sorted(Comparator.comparing(Task::getId))
-                .toList();
     }
 
     /**

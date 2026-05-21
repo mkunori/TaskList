@@ -62,7 +62,7 @@ class TaskServiceTest {
         Task task1 = createTask(1L, "Javaを学ぶ", false, null, Priority.MEDIUM);
         Task task2 = createTask(2L, "Springを学ぶ", true, null, Priority.HIGH);
 
-        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(task1, task2));
+        when(taskRepository.findByOwnerIdOrderByIdAsc(TEST_OWNER_ID)).thenReturn(List.of(task1, task2));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -82,7 +82,7 @@ class TaskServiceTest {
     void findTasks_active_returnsOnlyUndoneTasks() {
         Task undoneTask = createTask(1L, "未完了タスク", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerIdAndDone(TEST_OWNER_ID, false)).thenReturn(List.of(undoneTask));
+        when(taskRepository.findByOwnerIdAndDoneOrderByIdAsc(TEST_OWNER_ID, false)).thenReturn(List.of(undoneTask));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -102,7 +102,7 @@ class TaskServiceTest {
     void findTasks_done_returnsOnlyDoneTasks() {
         Task doneTask = createTask(2L, "完了済みタスク", true, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerIdAndDone(TEST_OWNER_ID, true)).thenReturn(List.of(doneTask));
+        when(taskRepository.findByOwnerIdAndDoneOrderByIdAsc(TEST_OWNER_ID, true)).thenReturn(List.of(doneTask));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -123,7 +123,7 @@ class TaskServiceTest {
         Task task1 = createTask(1L, "Spring Bootを学ぶ", false, null, Priority.MEDIUM);
         Task task3 = createTask(3L, "Spring JPA確認", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerIdAndTitleContainingIgnoreCase(TEST_OWNER_ID, "Spring")).thenReturn(List.of(task1, task3));
+        when(taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(TEST_OWNER_ID, "Spring")).thenReturn(List.of(task1, task3));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -144,7 +144,7 @@ class TaskServiceTest {
     void findTasks_activeAndKeyword_returnsMatchedUndoneTasks() {
         Task task = createTask(1L, "Spring Bootを学ぶ", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCase(TEST_OWNER_ID, false, "Spring")).thenReturn(List.of(task));
+        when(taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(TEST_OWNER_ID, false, "Spring")).thenReturn(List.of(task));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,

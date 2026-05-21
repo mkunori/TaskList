@@ -26,6 +26,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByOwnerId(String ownerId);
 
     /**
+     * 指定された匿名ユーザーIDに紐づくタスクを、IDの昇順で取得します。
+     *
+     * IDは自動採番されるため、IDの昇順にすると登録順になります。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @return 登録順のタスク一覧
+     */
+    List<Task> findByOwnerIdOrderByIdAsc(String ownerId);
+
+    /**
      * 指定された匿名ユーザーIDと完了状態に一致するタスクを取得します。
      *
      * @param ownerId 匿名ユーザーID
@@ -34,6 +44,15 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      */
     List<Task> findByOwnerIdAndDone(String ownerId, boolean done);
 
+    /**
+     * 指定された匿名ユーザーIDと完了状態に一致するタスクを、IDの昇順で取得します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
+     * @return 登録順のタスク一覧
+     */
+    List<Task> findByOwnerIdAndDoneOrderByIdAsc(String ownerId, boolean done);
+    
     /**
      * 指定された匿名ユーザーIDに紐づき、タイトルにキーワードを含むタスクを取得します。
      *
@@ -44,8 +63,20 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return 条件に一致するタスク一覧
      */
     List<Task> findByOwnerIdAndTitleContainingIgnoreCase(String ownerId, String keyword);
-
+   
     /**
+     * 指定された匿名ユーザーIDに紐づき、タイトルにキーワードを含むタスクを、
+     * IDの昇順で取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param keyword 検索キーワード
+     * @return 登録順のタスク一覧
+     */
+    List<Task> findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(String ownerId, String keyword);
+    
+   /**
      * 指定された匿名ユーザーID、完了状態に一致し、
      * タイトルにキーワードを含むタスクを取得します。
      *
@@ -57,6 +88,19 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return 条件に一致するタスク一覧
      */
     List<Task> findByOwnerIdAndDoneAndTitleContainingIgnoreCase(String ownerId, boolean done, String keyword);
+
+    /**
+     * 指定された匿名ユーザーID、完了状態に一致し、
+     * タイトルにキーワードを含むタスクを、IDの昇順で取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param keyword 検索キーワード
+     * @return 登録順のタスク一覧
+     */
+    List<Task> findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(String ownerId, boolean done, String keyword);
 
     /**
      * 指定されたタスクIDと匿名ユーザーIDに一致するタスクを取得します。
