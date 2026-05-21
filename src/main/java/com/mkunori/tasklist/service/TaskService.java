@@ -45,8 +45,8 @@ public class TaskService {
      * 指定された匿名ユーザーID、表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
      * DBから指定された匿名ユーザーIDに紐づくタスクを取得します。
-     * 完了状態による絞り込みはRepository側で行い、
-     * キーワード検索と並び替えはJava側で行います。
+     * 完了状態による絞り込みとキーワード検索はRepository側で行い、
+     * 並び替えはJava側で行います。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
@@ -54,28 +54,39 @@ public class TaskService {
      * @param keyword    検索キーワード
      * @return 絞り込み、検索、並び替えを行ったタスク一覧
      */
-    public List<Task> findTasks(
-            String ownerId,
-            TaskFilterType filterType,
-            TaskSortType sortType,
-            String keyword) {
+    public List<Task> findTasks(String ownerId, TaskFilterType filterType, TaskSortType sortType, String keyword) {
 
-        // 表示条件に応じて、Repository側で取得対象を変える
-        List<Task> tasks = findTasksByFilter(ownerId, filterType);
+        // 表示条件とキーワードに応じて、Repository側で取得対象を変える
+        List<Task> tasks = findTasksByFilterAndKeyword(ownerId, filterType, keyword);
 
-        // キーワード検索は、まだJava側で行う
-        List<Task> searchedTasks = searchTasks(tasks, keyword);
+        // 並び替えは、まだJava側で行う
+        return sortTasks(tasks, sortType);
+    }
 
-        // 並び替えも、まだJava側で行う
-        return sortTasks(searchedTasks, sortType);
+    /**
+     * 表示条件とキーワードに応じて、Repositoryからタスク一覧を取得します。
+     *
+     * キーワードが空の場合は、表示条件だけで取得します。
+     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    検索キーワード
+     * @return 表示条件とキーワードに一致するタスク一覧
+     */
+    private List<Task> findTasksByFilterAndKeyword(String ownerId, TaskFilterType filterType, String keyword) {
+
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+        if (normalizedKeyword.isEmpty()) {
+            return findTasksByFilter(ownerId, filterType);
+        }
+
+        return findTasksByFilterAndNonEmptyKeyword(ownerId, filterType, normalizedKeyword);
     }
 
     /**
      * 表示条件に応じて、Repositoryからタスク一覧を取得します。
-     *
-     * ALLの場合は、指定された匿名ユーザーIDに紐づくすべてのタスクを取得します。
-     * ACTIVEの場合は、未完了のタスクだけを取得します。
-     * DONEの場合は、完了済みのタスクだけを取得します。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
@@ -94,46 +105,24 @@ public class TaskService {
     }
 
     /**
-     * キーワードに応じてタスク一覧を絞り込みます。
+     * 表示条件と空ではないキーワードに応じて、Repositoryからタスク一覧を取得します。
      *
-     * キーワードが空の場合は、検索せずに元の一覧をそのまま返します。
-     * 今回はタスクタイトルにキーワードが含まれているかを調べます。
-     *
-     * @param tasks   検索前のタスク一覧
-     * @param keyword 検索キーワード
-     * @return 検索後のタスク一覧
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    空ではない検索キーワード
+     * @return 表示条件とキーワードに一致するタスク一覧
      */
-    private List<Task> searchTasks(List<Task> tasks, String keyword) {
-        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+    private List<Task> findTasksByFilterAndNonEmptyKeyword(String ownerId, TaskFilterType filterType, String keyword) {
 
-        if (normalizedKeyword.isEmpty()) {
-            return tasks;
+        if (filterType == null) {
+            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCase(ownerId, keyword);
         }
 
-        String lowerKeyword = normalizedKeyword.toLowerCase();
-
-        return tasks.stream()
-                .filter(task -> containsKeyword(task, lowerKeyword))
-                .toList();
-    }
-
-    /**
-     * タスクのタイトルにキーワードが含まれているかを判定します。
-     *
-     * タイトルが null の場合は、検索対象外として false を返します。
-     *
-     * @param task         検索対象のタスク
-     * @param lowerKeyword 小文字に変換済みの検索キーワード
-     * @return タイトルにキーワードが含まれている場合はtrue
-     */
-    private boolean containsKeyword(Task task, String lowerKeyword) {
-        String title = task.getTitle();
-
-        if (title == null) {
-            return false;
-        }
-
-        return title.toLowerCase().contains(lowerKeyword);
+        return switch (filterType) {
+            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCase(ownerId, keyword);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCase(ownerId, false, keyword);
+            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCase(ownerId, true, keyword);
+        };
     }
 
     /**

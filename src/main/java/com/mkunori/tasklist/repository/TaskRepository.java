@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.mkunori.tasklist.entity.Task;
 
@@ -34,6 +35,30 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByOwnerIdAndDone(String ownerId, boolean done);
 
     /**
+     * 指定された匿名ユーザーIDに紐づき、タイトルにキーワードを含むタスクを取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param keyword 検索キーワード
+     * @return 条件に一致するタスク一覧
+     */
+    List<Task> findByOwnerIdAndTitleContainingIgnoreCase(String ownerId, String keyword);
+
+    /**
+     * 指定された匿名ユーザーID、完了状態に一致し、
+     * タイトルにキーワードを含むタスクを取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
+     * @param keyword 検索キーワード
+     * @return 条件に一致するタスク一覧
+     */
+    List<Task> findByOwnerIdAndDoneAndTitleContainingIgnoreCase(String ownerId, boolean done, String keyword);
+
+    /**
      * 指定されたタスクIDと匿名ユーザーIDに一致するタスクを取得します。
      *
      * IDだけで取得すると、他の匿名ユーザーのタスクを操作できてしまう可能性があります。
@@ -43,6 +68,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param ownerId 匿名ユーザーID
      * @return 条件に一致するタスク。存在しない場合は空のOptional
      */
+    @Query("SELECT t FROM Task t WHERE t.id = :id AND t.ownerId = :ownerId")
     Optional<Task> findByIdAndOwnerId(Long id, String ownerId);
 
     /**

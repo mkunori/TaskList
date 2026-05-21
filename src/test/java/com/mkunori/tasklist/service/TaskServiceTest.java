@@ -121,10 +121,9 @@ class TaskServiceTest {
     @Test
     void findTasks_keyword_returnsMatchedTasks() {
         Task task1 = createTask(1L, "Spring Bootを学ぶ", false, null, Priority.MEDIUM);
-        Task task2 = createTask(2L, "Java Silver復習", false, null, Priority.MEDIUM);
         Task task3 = createTask(3L, "Spring JPA確認", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(task1, task2, task3));
+        when(taskRepository.findByOwnerIdAndTitleContainingIgnoreCase(TEST_OWNER_ID, "Spring")).thenReturn(List.of(task1, task3));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -135,6 +134,27 @@ class TaskServiceTest {
         assertEquals(2, actual.size());
         assertEquals("Spring Bootを学ぶ", actual.get(0).getTitle());
         assertEquals("Spring JPA確認", actual.get(1).getTitle());
+    }
+
+    /**
+     * 表示条件がACTIVEでキーワードがある場合、
+     * 未完了かつタイトルにキーワードを含むタスクが取得されることを確認します。
+     */
+    @Test
+    void findTasks_activeAndKeyword_returnsMatchedUndoneTasks() {
+        Task task = createTask(1L, "Spring Bootを学ぶ", false, null, Priority.MEDIUM);
+
+        when(taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCase(TEST_OWNER_ID, false, "Spring")).thenReturn(List.of(task));
+
+        List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
+                TaskFilterType.ACTIVE,
+                TaskSortType.CREATED,
+                "Spring");
+
+        assertEquals(1, actual.size());
+        assertEquals("Spring Bootを学ぶ", actual.get(0).getTitle());
+        assertFalse(actual.get(0).isDone());
     }
 
     /**
