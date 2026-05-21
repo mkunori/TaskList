@@ -25,6 +25,15 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByOwnerId(String ownerId);
 
     /**
+     * 指定された匿名ユーザーIDと完了状態に一致するタスクを取得します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
+     * @return 条件に一致するタスク一覧
+     */
+    List<Task> findByOwnerIdAndDone(String ownerId, boolean done);
+
+    /**
      * 指定されたタスクIDと匿名ユーザーIDに一致するタスクを取得します。
      *
      * IDだけで取得すると、他の匿名ユーザーのタスクを操作できてしまう可能性があります。

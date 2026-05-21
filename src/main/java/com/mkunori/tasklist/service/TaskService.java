@@ -44,8 +44,9 @@ public class TaskService {
     /**
      * 指定された匿名ユーザーID、表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
-     * DBから指定された匿名ユーザーIDに紐づくタスクだけを取得したあと、
-     * Java側で絞り込み、検索、並び替えを行います。
+     * DBから指定された匿名ユーザーIDに紐づくタスクを取得します。
+     * 完了状態による絞り込みはRepository側で行い、
+     * キーワード検索と並び替えはJava側で行います。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
@@ -59,41 +60,36 @@ public class TaskService {
             TaskSortType sortType,
             String keyword) {
 
-        // この匿名ユーザーIDに紐づくタスクだけを取得する
-        List<Task> tasks = taskRepository.findByOwnerId(ownerId);
+        // 表示条件に応じて、Repository側で取得対象を変える
+        List<Task> tasks = findTasksByFilter(ownerId, filterType);
 
-        // まず完了状態で絞り込む
-        List<Task> filteredTasks = filterTasks(tasks, filterType);
+        // キーワード検索は、まだJava側で行う
+        List<Task> searchedTasks = searchTasks(tasks, keyword);
 
-        // 次にキーワードで絞り込む
-        List<Task> searchedTasks = searchTasks(filteredTasks, keyword);
-
-        // 最後に並び替える
+        // 並び替えも、まだJava側で行う
         return sortTasks(searchedTasks, sortType);
     }
 
     /**
-     * 表示条件に応じてタスク一覧を絞り込みます。
+     * 表示条件に応じて、Repositoryからタスク一覧を取得します。
      *
-     * ALLなら全件、ACTIVEなら未完了のみ、DONEなら完了済みのみを返します。
+     * ALLの場合は、指定された匿名ユーザーIDに紐づくすべてのタスクを取得します。
+     * ACTIVEの場合は、未完了のタスクだけを取得します。
+     * DONEの場合は、完了済みのタスクだけを取得します。
      *
-     * @param tasks      絞り込み前のタスク一覧
+     * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @return 絞り込み後のタスク一覧
+     * @return 表示条件に一致するタスク一覧
      */
-    private List<Task> filterTasks(List<Task> tasks, TaskFilterType filterType) {
+    private List<Task> findTasksByFilter(String ownerId, TaskFilterType filterType) {
         if (filterType == null) {
-            return tasks;
+            return taskRepository.findByOwnerId(ownerId);
         }
 
         return switch (filterType) {
-            case ALL -> tasks;
-            case ACTIVE -> tasks.stream()
-                    .filter(task -> !task.isDone())
-                    .toList();
-            case DONE -> tasks.stream()
-                    .filter(Task::isDone)
-                    .toList();
+            case ALL -> taskRepository.findByOwnerId(ownerId);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDone(ownerId, false);
+            case DONE -> taskRepository.findByOwnerIdAndDone(ownerId, true);
         };
     }
 

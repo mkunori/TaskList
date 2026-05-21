@@ -81,9 +81,8 @@ class TaskServiceTest {
     @Test
     void findTasks_active_returnsOnlyUndoneTasks() {
         Task undoneTask = createTask(1L, "未完了タスク", false, null, Priority.MEDIUM);
-        Task doneTask = createTask(2L, "完了済みタスク", true, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(undoneTask, doneTask));
+        when(taskRepository.findByOwnerIdAndDone(TEST_OWNER_ID, false)).thenReturn(List.of(undoneTask));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -101,10 +100,9 @@ class TaskServiceTest {
      */
     @Test
     void findTasks_done_returnsOnlyDoneTasks() {
-        Task undoneTask = createTask(1L, "未完了タスク", false, null, Priority.MEDIUM);
         Task doneTask = createTask(2L, "完了済みタスク", true, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(undoneTask, doneTask));
+        when(taskRepository.findByOwnerIdAndDone(TEST_OWNER_ID, true)).thenReturn(List.of(doneTask));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
