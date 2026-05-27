@@ -1,7 +1,6 @@
 package com.mkunori.tasklist.service;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,72 +43,81 @@ public class TaskService {
     /**
      * 指定された匿名ユーザーID、表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
-     * 完了状態による絞り込み、キーワード検索、登録順の並び替え、
-     * 期限が近い順の並び替え、優先度が高い順の並び替えはRepository側で行います。
+     * 完了状態による絞り込み、キーワード検索、並び替えはRepository側で行います。
      *
-     * @param ownerId 匿名ユーザーID
+     * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @param sortType 並び替え条件
-     * @param keyword 検索キーワード
+     * @param sortType   並び替え条件
+     * @param keyword    検索キーワード
      * @return 条件に一致するタスク一覧
      */
     public List<Task> findTasks(String ownerId, TaskFilterType filterType, TaskSortType sortType, String keyword) {
 
-        if (sortType == null || sortType == TaskSortType.CREATED) {
-            return findTasksByFilterAndKeywordOrderByCreated(ownerId, filterType, keyword);
-        }
+        TaskSortType actualSortType = sortType == null ? TaskSortType.CREATED : sortType;
+        String normalizedKeyword = normalizeKeyword(keyword);
 
-        if (sortType == TaskSortType.DUE_DATE) {
-            return findTasksByFilterAndKeywordOrderByDueDate(ownerId, filterType, keyword);
-        }
-
-        if (sortType == TaskSortType.PRIORITY) {
-            return findTasksByFilterAndKeywordOrderByPriority(ownerId, filterType, keyword);
-        }
-
-        return findTasksByFilterAndKeywordOrderByCreated(ownerId, filterType, keyword);
+        return switch (actualSortType) {
+            case CREATED -> findTasksOrderByCreated(ownerId, filterType, normalizedKeyword);
+            case DUE_DATE -> findTasksOrderByDueDate(ownerId, filterType, normalizedKeyword);
+            case PRIORITY -> findTasksOrderByPriority(ownerId, filterType, normalizedKeyword);
+        };
     }
 
     /**
-     * 表示条件とキーワードに応じて、登録順でRepositoryからタスク一覧を取得します。
+     * 検索キーワードを扱いやすい形に整えます。
      *
-     * キーワードが空の場合は、表示条件だけで取得します。
-     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
-     * どちらの場合も、IDの昇順で取得します。
+     * nullの場合は空文字に変換し、前後の空白を取り除きます。
      *
-     * @param ownerId    匿名ユーザーID
-     * @param filterType 表示条件
-     * @param keyword    検索キーワード
-     * @return 登録順のタスク一覧
+     * @param keyword 検索キーワード
+     * @return 整形後の検索キーワード
      */
-    private List<Task> findTasksByFilterAndKeywordOrderByCreated(String ownerId, TaskFilterType filterType, String keyword) {
-
-        String normalizedKeyword = keyword == null ? "" : keyword.trim();
-
-        if (normalizedKeyword.isEmpty()) {
-            return findTasksByFilterOrderByCreated(ownerId, filterType);
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) {
+            return "";
         }
 
-        return findTasksByFilterAndNonEmptyKeywordOrderByCreated(
-                ownerId,
-                filterType,
-                normalizedKeyword);
+        return keyword.trim();
     }
 
     /**
-     * 表示条件に応じて、登録順でRepositoryからタスク一覧を取得します。
+     * 検索キーワードが入力されているかを判定します。
+     *
+     * @param keyword 整形済みの検索キーワード
+     * @return キーワードが入力されている場合はtrue
+     */
+    private boolean hasKeyword(String keyword) {
+        return !keyword.isEmpty();
+    }
+
+    /**
+     * 表示条件とキーワードに応じて、登録順でタスク一覧を取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    整形済みの検索キーワード
+     * @return 登録順のタスク一覧
+     */
+    private List<Task> findTasksOrderByCreated(String ownerId, TaskFilterType filterType, String keyword) {
+
+        if (hasKeyword(keyword)) {
+            return findTasksOrderByCreatedWithKeyword(ownerId, filterType, keyword);
+        }
+
+        return findTasksOrderByCreatedWithoutKeyword(ownerId, filterType);
+    }
+
+    /**
+     * 表示条件に応じて、登録順でタスク一覧を取得します。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
      * @return 登録順のタスク一覧
      */
-    private List<Task> findTasksByFilterOrderByCreated(String ownerId, TaskFilterType filterType) {
+    private List<Task> findTasksOrderByCreatedWithoutKeyword(String ownerId, TaskFilterType filterType) {
 
-        if (filterType == null) {
-            return taskRepository.findByOwnerIdOrderByIdAsc(ownerId);
-        }
+        TaskFilterType actualFilterType = normalizeFilterType(filterType);
 
-        return switch (filterType) {
+        return switch (actualFilterType) {
             case ALL -> taskRepository.findByOwnerIdOrderByIdAsc(ownerId);
             case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByIdAsc(ownerId, false);
             case DONE -> taskRepository.findByOwnerIdAndDoneOrderByIdAsc(ownerId, true);
@@ -117,86 +125,161 @@ public class TaskService {
     }
 
     /**
-     * 表示条件と空ではないキーワードに応じて、
-     * 登録順でRepositoryからタスク一覧を取得します。
+     * 表示条件とキーワードに応じて、登録順でタスク一覧を取得します。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @param keyword    空ではない検索キーワード
+     * @param keyword    整形済みの検索キーワード
      * @return 登録順のタスク一覧
      */
-    private List<Task> findTasksByFilterAndNonEmptyKeywordOrderByCreated(String ownerId, TaskFilterType filterType, String keyword) {
+    private List<Task> findTasksOrderByCreatedWithKeyword(String ownerId, TaskFilterType filterType, String keyword) {
 
-        if (filterType == null) {
-            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, keyword);
-        }
+        TaskFilterType actualFilterType = normalizeFilterType(filterType);
 
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, keyword);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, false, keyword);
-            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(ownerId, true, keyword);
+        return switch (actualFilterType) {
+            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(
+                    ownerId,
+                    keyword);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(
+                    ownerId,
+                    false,
+                    keyword);
+            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(
+                    ownerId,
+                    true,
+                    keyword);
         };
     }
 
     /**
-     * 表示条件とキーワードに応じて、Repositoryからタスク一覧を取得します。
-     *
-     * キーワードが空の場合は、表示条件だけで取得します。
-     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
+     * 表示条件とキーワードに応じて、期限が近い順でタスク一覧を取得します。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @param keyword    検索キーワード
-     * @return 表示条件とキーワードに一致するタスク一覧
+     * @param keyword    整形済みの検索キーワード
+     * @return 期限が近い順のタスク一覧
      */
-    private List<Task> findTasksByFilterAndKeyword(String ownerId, TaskFilterType filterType, String keyword) {
+    private List<Task> findTasksOrderByDueDate(String ownerId, TaskFilterType filterType, String keyword) {
 
-        String normalizedKeyword = keyword == null ? "" : keyword.trim();
-
-        if (normalizedKeyword.isEmpty()) {
-            return findTasksByFilter(ownerId, filterType);
+        if (hasKeyword(keyword)) {
+            return findTasksOrderByDueDateWithKeyword(ownerId, filterType, keyword);
         }
 
-        return findTasksByFilterAndNonEmptyKeyword(ownerId, filterType, normalizedKeyword);
+        return findTasksOrderByDueDateWithoutKeyword(ownerId, filterType);
     }
 
     /**
-     * 表示条件に応じて、Repositoryからタスク一覧を取得します。
+     * 表示条件に応じて、期限が近い順でタスク一覧を取得します。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @return 表示条件に一致するタスク一覧
+     * @return 期限が近い順のタスク一覧
      */
-    private List<Task> findTasksByFilter(String ownerId, TaskFilterType filterType) {
-        if (filterType == null) {
-            return taskRepository.findByOwnerId(ownerId);
-        }
+    private List<Task> findTasksOrderByDueDateWithoutKeyword(String ownerId, TaskFilterType filterType) {
 
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerId(ownerId);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDone(ownerId, false);
-            case DONE -> taskRepository.findByOwnerIdAndDone(ownerId, true);
+        TaskFilterType actualFilterType = normalizeFilterType(filterType);
+
+        return switch (actualFilterType) {
+            case ALL -> taskRepository.findByOwnerIdOrderByDueDateAscNullsLast(ownerId);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(
+                    ownerId,
+                    false);
+            case DONE -> taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(
+                    ownerId,
+                    true);
         };
     }
 
     /**
-     * 表示条件と空ではないキーワードに応じて、Repositoryからタスク一覧を取得します。
+     * 表示条件とキーワードに応じて、期限が近い順でタスク一覧を取得します。
      *
      * @param ownerId    匿名ユーザーID
      * @param filterType 表示条件
-     * @param keyword    空ではない検索キーワード
-     * @return 表示条件とキーワードに一致するタスク一覧
+     * @param keyword    整形済みの検索キーワード
+     * @return 期限が近い順のタスク一覧
      */
-    private List<Task> findTasksByFilterAndNonEmptyKeyword(String ownerId, TaskFilterType filterType, String keyword) {
+    private List<Task> findTasksOrderByDueDateWithKeyword(String ownerId, TaskFilterType filterType, String keyword) {
 
-        if (filterType == null) {
-            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCase(ownerId, keyword);
+        TaskFilterType actualFilterType = normalizeFilterType(filterType);
+
+        return switch (actualFilterType) {
+            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(
+                    ownerId,
+                    keyword);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(
+                    ownerId,
+                    false,
+                    keyword);
+            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(
+                    ownerId,
+                    true,
+                    keyword);
+        };
+    }
+
+    /**
+     * 表示条件とキーワードに応じて、優先度が高い順でタスク一覧を取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    整形済みの検索キーワード
+     * @return 優先度が高い順のタスク一覧
+     */
+    private List<Task> findTasksOrderByPriority(String ownerId, TaskFilterType filterType, String keyword) {
+
+        if (hasKeyword(keyword)) {
+            return findTasksOrderByPriorityWithKeyword(ownerId, filterType, keyword);
         }
 
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCase(ownerId, keyword);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCase(ownerId, false, keyword);
-            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCase(ownerId, true, keyword);
+        return findTasksOrderByPriorityWithoutKeyword(ownerId, filterType);
+    }
+
+    /**
+     * 表示条件に応じて、優先度が高い順でタスク一覧を取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @return 優先度が高い順のタスク一覧
+     */
+    private List<Task> findTasksOrderByPriorityWithoutKeyword(String ownerId, TaskFilterType filterType) {
+
+        TaskFilterType actualFilterType = normalizeFilterType(filterType);
+
+        return switch (actualFilterType) {
+            case ALL -> taskRepository.findByOwnerIdOrderByPriorityHighFirst(ownerId);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
+                    ownerId,
+                    false);
+            case DONE -> taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
+                    ownerId,
+                    true);
+        };
+    }
+
+    /**
+     * 表示条件とキーワードに応じて、優先度が高い順でタスク一覧を取得します。
+     *
+     * @param ownerId    匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword    整形済みの検索キーワード
+     * @return 優先度が高い順のタスク一覧
+     */
+    private List<Task> findTasksOrderByPriorityWithKeyword(String ownerId, TaskFilterType filterType, String keyword) {
+
+        TaskFilterType actualFilterType = normalizeFilterType(filterType);
+
+        return switch (actualFilterType) {
+            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+                    ownerId,
+                    keyword);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+                    ownerId,
+                    false,
+                    keyword);
+            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+                    ownerId,
+                    true,
+                    keyword);
         };
     }
 
@@ -307,148 +390,18 @@ public class TaskService {
     }
 
     /**
-     * 表示条件とキーワードに応じて、期限が近い順でRepositoryからタスク一覧を取得します。
+     * 表示条件を扱いやすい形に整えます。
      *
-     * キーワードが空の場合は、表示条件だけで取得します。
-     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
-     * どちらの場合も、期限なしのタスクは最後に表示します。
+     * nullの場合はALLとして扱います。
      *
-     * @param ownerId 匿名ユーザーID
      * @param filterType 表示条件
-     * @param keyword 検索キーワード
-     * @return 期限が近い順のタスク一覧
+     * @return 整形後の表示条件
      */
-    private List<Task> findTasksByFilterAndKeywordOrderByDueDate(String ownerId, TaskFilterType filterType, String keyword) {
-
-        String normalizedKeyword = keyword == null ? "" : keyword.trim();
-
-        if (normalizedKeyword.isEmpty()) {
-            return findTasksByFilterOrderByDueDate(ownerId, filterType);
-        }
-
-        return findTasksByFilterAndNonEmptyKeywordOrderByDueDate(ownerId, filterType, normalizedKeyword);
-    }
-
-    /**
-     * 表示条件に応じて、期限が近い順でRepositoryからタスク一覧を取得します。
-     *
-     * @param ownerId 匿名ユーザーID
-     * @param filterType 表示条件
-     * @return 期限が近い順のタスク一覧
-     */
-    private List<Task> findTasksByFilterOrderByDueDate(String ownerId, TaskFilterType filterType) {
-
+    private TaskFilterType normalizeFilterType(TaskFilterType filterType) {
         if (filterType == null) {
-            return taskRepository.findByOwnerIdOrderByDueDateAscNullsLast(ownerId);
+            return TaskFilterType.ALL;
         }
 
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerIdOrderByDueDateAscNullsLast(ownerId);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(ownerId, false);
-            case DONE -> taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(ownerId, true);
-        };
-    }
-
-    /**
-     * 表示条件と空ではないキーワードに応じて、
-     * 期限が近い順でRepositoryからタスク一覧を取得します。
-     *
-     * @param ownerId 匿名ユーザーID
-     * @param filterType 表示条件
-     * @param keyword 空ではない検索キーワード
-     * @return 期限が近い順のタスク一覧
-     */
-    private List<Task> findTasksByFilterAndNonEmptyKeywordOrderByDueDate(String ownerId, TaskFilterType filterType, String keyword) {
-
-        if (filterType == null) {
-            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, keyword);
-        }
-
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, keyword);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, false, keyword);
-            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, true, keyword);
-        };
-    }
-
-    /**
-     * 表示条件とキーワードに応じて、優先度が高い順でRepositoryからタスク一覧を取得します。
-     *
-     * キーワードが空の場合は、表示条件だけで取得します。
-     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
-     *
-     * @param ownerId 匿名ユーザーID
-     * @param filterType 表示条件
-     * @param keyword 検索キーワード
-     * @return 優先度が高い順のタスク一覧
-     */
-    private List<Task> findTasksByFilterAndKeywordOrderByPriority(String ownerId, TaskFilterType filterType, String keyword) {
-
-        String normalizedKeyword = keyword == null ? "" : keyword.trim();
-
-        if (normalizedKeyword.isEmpty()) {
-            return findTasksByFilterOrderByPriority(ownerId, filterType);
-        }
-
-        return findTasksByFilterAndNonEmptyKeywordOrderByPriority(
-                ownerId,
-                filterType,
-                normalizedKeyword);
-    }
-
-    /**
-     * 表示条件に応じて、優先度が高い順でRepositoryからタスク一覧を取得します。
-     *
-     * @param ownerId 匿名ユーザーID
-     * @param filterType 表示条件
-     * @return 優先度が高い順のタスク一覧
-     */
-    private List<Task> findTasksByFilterOrderByPriority(String ownerId, TaskFilterType filterType) {
-
-        if (filterType == null) {
-            return taskRepository.findByOwnerIdOrderByPriorityHighFirst(ownerId);
-        }
-
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerIdOrderByPriorityHighFirst(ownerId);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
-                    ownerId,
-                    false);
-            case DONE -> taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
-                    ownerId,
-                    true);
-        };
-    }
-
-    /**
-     * 表示条件と空ではないキーワードに応じて、
-     * 優先度が高い順でRepositoryからタスク一覧を取得します。
-     *
-     * @param ownerId 匿名ユーザーID
-     * @param filterType 表示条件
-     * @param keyword 空ではない検索キーワード
-     * @return 優先度が高い順のタスク一覧
-     */
-    private List<Task> findTasksByFilterAndNonEmptyKeywordOrderByPriority(String ownerId, TaskFilterType filterType, String keyword) {
-
-        if (filterType == null) {
-            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
-                    ownerId,
-                    keyword);
-        }
-
-        return switch (filterType) {
-            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
-                    ownerId,
-                    keyword);
-            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
-                    ownerId,
-                    false,
-                    keyword);
-            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
-                    ownerId,
-                    true,
-                    keyword);
-        };
+        return filterType;
     }
 }

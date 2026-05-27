@@ -97,7 +97,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * 大文字小文字を区別せずに検索します。
      *
      * @param ownerId 匿名ユーザーID
-     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
      * @param keyword 検索キーワード
      * @return 登録順のタスク一覧
      */
@@ -150,7 +150,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * 期限なしのタスクは最後に表示します。
      *
      * @param ownerId 匿名ユーザーID
-     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
      * @return 期限が近い順のタスク一覧
      */
     @Query("""
@@ -200,7 +200,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * 期限なしのタスクは最後に表示します。
      *
      * @param ownerId 匿名ユーザーID
-     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
      * @param keyword 検索キーワード
      * @return 期限が近い順のタスク一覧
      */
@@ -253,7 +253,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * 優先度が未設定のタスクは最後に表示します。
      *
      * @param ownerId 匿名ユーザーID
-     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
      * @return 優先度が高い順のタスク一覧
      */
     @Query("""
@@ -282,7 +282,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * HIGH、MEDIUM、LOW の順で表示します。
      *
      * @param ownerId 匿名ユーザーID
-     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param done    完了状態。trueなら完了済み、falseなら未完了
      * @param keyword 検索キーワード
      * @return 優先度が高い順のタスク一覧
      */
