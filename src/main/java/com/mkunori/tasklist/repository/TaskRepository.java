@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.mkunori.tasklist.entity.Task;
 
@@ -122,4 +123,100 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param ownerId 匿名ユーザーID
      */
     void deleteByIdAndOwnerId(Long id, String ownerId);
+
+    /**
+     * 指定された匿名ユーザーIDに紐づくタスクを、期限が近い順で取得します。
+     *
+     * 期限なしのタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @return 期限が近い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            ORDER BY
+                CASE WHEN task.dueDate IS NULL THEN 1 ELSE 0 END,
+                task.dueDate ASC,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdOrderByDueDateAscNullsLast(
+            @Param("ownerId") String ownerId);
+
+    /**
+     * 指定された匿名ユーザーIDと完了状態に一致するタスクを、期限が近い順で取得します。
+     *
+     * 期限なしのタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @return 期限が近い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            AND task.done = :done
+            ORDER BY
+                CASE WHEN task.dueDate IS NULL THEN 1 ELSE 0 END,
+                task.dueDate ASC,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdAndDoneOrderByDueDateAscNullsLast(
+            @Param("ownerId") String ownerId,
+            @Param("done") boolean done);
+
+    /**
+     * 指定された匿名ユーザーIDに紐づき、タイトルにキーワードを含むタスクを、
+     * 期限が近い順で取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     * 期限なしのタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param keyword 検索キーワード
+     * @return 期限が近い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            AND LOWER(task.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            ORDER BY
+                CASE WHEN task.dueDate IS NULL THEN 1 ELSE 0 END,
+                task.dueDate ASC,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(
+            @Param("ownerId") String ownerId,
+            @Param("keyword") String keyword);
+    
+    /**
+     * 指定された匿名ユーザーID、完了状態に一致し、
+     * タイトルにキーワードを含むタスクを、期限が近い順で取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     * 期限なしのタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param keyword 検索キーワード
+     * @return 期限が近い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            AND task.done = :done
+            AND LOWER(task.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            ORDER BY
+                CASE WHEN task.dueDate IS NULL THEN 1 ELSE 0 END,
+                task.dueDate ASC,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(
+            @Param("ownerId") String ownerId,
+            @Param("done") boolean done,
+            @Param("keyword") String keyword);
 }

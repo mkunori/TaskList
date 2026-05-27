@@ -44,20 +44,24 @@ public class TaskService {
     /**
      * 指定された匿名ユーザーID、表示条件、並び替え条件、キーワードでタスク一覧を取得します。
      *
-     * DBから指定された匿名ユーザーIDに紐づくタスクを取得します。
-     * 完了状態による絞り込み、キーワード検索、登録順の並び替えはRepository側で行い、
-     * 期限順と優先度順の並び替えはJava側で行います。
+     * 完了状態による絞り込み、キーワード検索、登録順の並び替え、
+     * 期限が近い順の並び替えはRepository側で行います。
+     * 優先度順の並び替えは、まだJava側で行います。
      *
-     * @param ownerId    匿名ユーザーID
+     * @param ownerId 匿名ユーザーID
      * @param filterType 表示条件
-     * @param sortType   並び替え条件
-     * @param keyword    検索キーワード
-     * @return 絞り込み、検索、並び替えを行ったタスク一覧
+     * @param sortType 並び替え条件
+     * @param keyword 検索キーワード
+     * @return 条件に一致するタスク一覧
      */
     public List<Task> findTasks(String ownerId, TaskFilterType filterType, TaskSortType sortType, String keyword) {
 
-        if (sortType == TaskSortType.CREATED || sortType == null) {
+        if (sortType == null || sortType == TaskSortType.CREATED) {
             return findTasksByFilterAndKeywordOrderByCreated(ownerId, filterType, keyword);
+        }
+
+        if (sortType == TaskSortType.DUE_DATE) {
+            return findTasksByFilterAndKeywordOrderByDueDate(ownerId, filterType, keyword);
         }
 
         List<Task> tasks = findTasksByFilterAndKeyword(ownerId, filterType, keyword);
@@ -198,38 +202,22 @@ public class TaskService {
     /**
      * 並び替え条件に応じてタスク一覧を並び替えます。
      *
-     * 登録順はRepository側で並び替えるため、このメソッドでは扱いません。
+     * 登録順と期限順はRepository側で並び替えるため、
+     * このメソッドでは主に優先度順を扱います。
      *
      * @param tasks    並び替え前のタスク一覧
      * @param sortType 並び替え条件
      * @return 並び替え後のタスク一覧
      */
     private List<Task> sortTasks(List<Task> tasks, TaskSortType sortType) {
-        if (sortType == null || sortType == TaskSortType.CREATED) {
+        if (sortType == null || sortType == TaskSortType.CREATED || sortType == TaskSortType.DUE_DATE) {
             return tasks;
         }
 
         return switch (sortType) {
-            case DUE_DATE -> sortByDueDate(tasks);
             case PRIORITY -> sortByPriority(tasks);
-            case CREATED -> tasks;
+            case CREATED, DUE_DATE -> tasks;
         };
-    }
-
-    /**
-     * タスク一覧を期限が近い順で並び替えます。
-     *
-     * dueDateがnullのタスク、つまり期限なしのタスクは最後に並べます。
-     *
-     * @param tasks 並び替え前のタスク一覧
-     * @return 期限が近い順に並び替えたタスク一覧
-     */
-    private List<Task> sortByDueDate(List<Task> tasks) {
-        return tasks.stream()
-                .sorted(Comparator.comparing(
-                        Task::getDueDate,
-                        Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
     }
 
     /**
@@ -372,5 +360,78 @@ public class TaskService {
         taskRepository.save(task);
 
         return true;
+    }
+
+    /**
+     * 表示条件とキーワードに応じて、期限が近い順でRepositoryからタスク一覧を取得します。
+     *
+     * キーワードが空の場合は、表示条件だけで取得します。
+     * キーワードが入力されている場合は、タイトルにキーワードを含むタスクだけを取得します。
+     * どちらの場合も、期限なしのタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword 検索キーワード
+     * @return 期限が近い順のタスク一覧
+     */
+    private List<Task> findTasksByFilterAndKeywordOrderByDueDate(
+            String ownerId,
+            TaskFilterType filterType,
+            String keyword) {
+
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+
+        if (normalizedKeyword.isEmpty()) {
+            return findTasksByFilterOrderByDueDate(ownerId, filterType);
+        }
+
+        return findTasksByFilterAndNonEmptyKeywordOrderByDueDate(ownerId, filterType, normalizedKeyword);
+    }
+
+    /**
+     * 表示条件に応じて、期限が近い順でRepositoryからタスク一覧を取得します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param filterType 表示条件
+     * @return 期限が近い順のタスク一覧
+     */
+    private List<Task> findTasksByFilterOrderByDueDate(
+            String ownerId,
+            TaskFilterType filterType) {
+
+        if (filterType == null) {
+            return taskRepository.findByOwnerIdOrderByDueDateAscNullsLast(ownerId);
+        }
+
+        return switch (filterType) {
+            case ALL -> taskRepository.findByOwnerIdOrderByDueDateAscNullsLast(ownerId);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(ownerId, false);
+            case DONE -> taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(ownerId, true);
+        };
+    }
+
+    /**
+     * 表示条件と空ではないキーワードに応じて、
+     * 期限が近い順でRepositoryからタスク一覧を取得します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param filterType 表示条件
+     * @param keyword 空ではない検索キーワード
+     * @return 期限が近い順のタスク一覧
+     */
+    private List<Task> findTasksByFilterAndNonEmptyKeywordOrderByDueDate(
+            String ownerId,
+            TaskFilterType filterType,
+            String keyword) {
+
+        if (filterType == null) {
+            return taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, keyword);
+        }
+
+        return switch (filterType) {
+            case ALL -> taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, keyword);
+            case ACTIVE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, false, keyword);
+            case DONE -> taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(ownerId, true, keyword);
+        };
     }
 }

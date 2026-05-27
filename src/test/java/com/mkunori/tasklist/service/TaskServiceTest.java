@@ -168,7 +168,8 @@ class TaskServiceTest {
         Task later = createTask(2L, "あと", false, LocalDate.of(2026, 5, 20), Priority.MEDIUM);
         Task earlier = createTask(3L, "先", false, LocalDate.of(2026, 5, 10), Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(noDueDate, later, earlier));
+        when(taskRepository.findByOwnerIdOrderByDueDateAscNullsLast(TEST_OWNER_ID))
+                .thenReturn(List.of(earlier, later, noDueDate));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -179,6 +180,56 @@ class TaskServiceTest {
         assertEquals("先", actual.get(0).getTitle());
         assertEquals("あと", actual.get(1).getTitle());
         assertEquals("期限なし", actual.get(2).getTitle());
+    }
+
+    /**
+     * 表示条件がACTIVEで期限順の場合、
+     * 未完了タスクが期限が近い順で取得されることを確認します。
+     */
+    @Test
+    void findTasks_activeAndDueDateSort_returnsUndoneTasksOrderByDueDate() {
+        Task earlier = createTask(1L, "先の未完了タスク", false, LocalDate.of(2026, 5, 10), Priority.MEDIUM);
+        Task later = createTask(2L, "後の未完了タスク", false, LocalDate.of(2026, 5, 20), Priority.MEDIUM);
+
+        when(taskRepository.findByOwnerIdAndDoneOrderByDueDateAscNullsLast(
+                TEST_OWNER_ID,
+                false))
+                .thenReturn(List.of(earlier, later));
+
+        List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
+                TaskFilterType.ACTIVE,
+                TaskSortType.DUE_DATE,
+                "");
+
+        assertEquals(2, actual.size());
+        assertEquals("先の未完了タスク", actual.get(0).getTitle());
+        assertEquals("後の未完了タスク", actual.get(1).getTitle());
+    }
+
+    /**
+     * キーワードありで期限順の場合、
+     * タイトルにキーワードを含むタスクが期限が近い順で取得されることを確認します。
+     */
+    @Test
+    void findTasks_keywordAndDueDateSort_returnsMatchedTasksOrderByDueDate() {
+        Task earlier = createTask(1L, "Spring JPA確認", false, LocalDate.of(2026, 5, 10), Priority.MEDIUM);
+        Task later = createTask(2L, "Spring Bootを学ぶ", false, LocalDate.of(2026, 5, 20), Priority.MEDIUM);
+
+        when(taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByDueDateAscNullsLast(
+                TEST_OWNER_ID,
+                "Spring"))
+                .thenReturn(List.of(earlier, later));
+
+        List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
+                TaskFilterType.ALL,
+                TaskSortType.DUE_DATE,
+                "Spring");
+
+        assertEquals(2, actual.size());
+        assertEquals("Spring JPA確認", actual.get(0).getTitle());
+        assertEquals("Spring Bootを学ぶ", actual.get(1).getTitle());
     }
 
     /**
