@@ -156,7 +156,7 @@
             </form>
         </section>
     </div>
-    
+
     <section>
         <h2>タスク一覧</h2>
 
@@ -191,9 +191,9 @@
                         完了状態を切り替えるフォームです。
                         現在の表示条件をhiddenで送ることで、操作後も同じ条件の一覧へ戻ります。
                     -->
-                    <form class="inline-form"
-                        th:action="@{/tasklist/tasks/{id}/toggle(id=${task.id})}"
-                        method="post">
+                    <form class="inline-form remember-scroll-form"
+                          th:action="@{/tasklist/tasks/{id}/toggle(id=${task.id})}"
+                          method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
                         <input type="hidden" name="keyword" th:value="${keyword}">
@@ -235,6 +235,31 @@
             </article>
         </div>
     </section>
+
+<script>
+    /*
+     * 完了切り替え後に、画面のスクロール位置を復元します。
+     *
+     * 完了ボタンを押すと、フォーム送信によりページ全体が再表示されます。
+     * そのままだと画面上部に戻ってしまうため、送信前のスクロール位置を
+     * sessionStorageに保存し、再表示後に同じ位置へ戻します。
+     */
+    document.addEventListener("DOMContentLoaded", function () {
+        const scrollY = sessionStorage.getItem("tasklistScrollY");
+
+        if (scrollY !== null) {
+            window.scrollTo(0, Number(scrollY));
+            sessionStorage.removeItem("tasklistScrollY");
+        }
+
+        document.querySelectorAll(".remember-scroll-form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                sessionStorage.setItem("tasklistScrollY", window.scrollY);
+            });
+        });
+    });
+</script>
+
 </body>
 
 </html>
