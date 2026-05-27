@@ -18,8 +18,7 @@
         タスク編集フォームです。
         th:object="${taskUpdateForm}" は、Controllerから渡されたTaskUpdateFormと対応します。
     -->
-    <form th:action="@{/tasklist/tasks/{id}/update(id=${taskUpdateForm.id})}"
-        th:object="${taskUpdateForm}"
+    <form th:action="@{/tasklist/tasks/{id}/update(id=${taskUpdateForm.id})}" th:object="${taskUpdateForm}"
         method="post">
 
         <!--
@@ -48,9 +47,7 @@
         <!--
             titleに入力エラーがある場合だけ、エラーメッセージを表示します。
         -->
-        <p class="error-message"
-        th:if="${#fields.hasErrors('title')}"
-        th:errors="*{title}">
+        <p class="error-message" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">
         </p>
 
         <div>
@@ -66,15 +63,13 @@
 
         <div>
             <label for="priority">優先度</label>
-        
+
             <!--
                 th:field="*{priority}" は taskUpdateForm.priority と対応します。
                 現在の優先度が選択された状態で表示されます。
             -->
             <select id="priority" th:field="*{priority}">
-                <option th:each="priority : ${priorities}"
-                        th:value="${priority}"
-                        th:text="${priority.displayName}">
+                <option th:each="priority : ${priorities}" th:value="${priority}" th:text="${priority.displayName}">
                 </option>
             </select>
         </div>

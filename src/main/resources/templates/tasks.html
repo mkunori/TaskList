@@ -51,9 +51,7 @@
                 <!--
                     titleに入力エラーがある場合だけ、エラーメッセージを表示します。
                 -->
-                <p class="error-message"
-                th:if="${#fields.hasErrors('title')}"
-                th:errors="*{title}">
+                <p class="error-message" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">
                 </p>
 
                 <div class="form-field">
@@ -69,19 +67,18 @@
 
                 <div class="form-field">
                     <label for="priority">優先度</label>
-                
+
                     <!--
                         th:field="*{priority}" は taskForm.priority と対応します。
                         priorities は Controller の @ModelAttribute から渡されています。
                     -->
                     <select id="priority" th:field="*{priority}">
-                        <option th:each="priority : ${priorities}"
-                                th:value="${priority}"
-                                th:text="${priority.displayName}">
+                        <option th:each="priority : ${priorities}" th:value="${priority}"
+                            th:text="${priority.displayName}">
                         </option>
                     </select>
                 </div>
-                
+
                 <!--
                     現在の表示条件を保持するための隠し項目です。
                     タスク追加後も、同じ絞り込み・並び替え・検索条件の一覧へ戻るために使います。
@@ -96,7 +93,7 @@
 
         <section class="panel">
             <h2>表示条件</h2>
-        
+
             <!--
                 タスク一覧の表示条件、並び替え条件、検索キーワードを指定するフォームです。
                 method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
@@ -105,50 +102,42 @@
             <form class="form-grid remember-scroll-form" th:action="@{/tasklist}" method="get">
                 <div class="form-field">
                     <label for="filter">表示</label>
-        
+
                     <!--
                         name="filter" は Controller の @RequestParam(name = "filter") と対応します。
                         selectedFilter は、現在選択中の表示条件です。
                     -->
                     <select id="filter" name="filter">
-                        <option th:each="filterType : ${filterTypes}"
-                                th:value="${filterType}"
-                                th:text="${filterType.displayName}"
-                                th:selected="${filterType == selectedFilter}">
+                        <option th:each="filterType : ${filterTypes}" th:value="${filterType}"
+                            th:text="${filterType.displayName}" th:selected="${filterType == selectedFilter}">
                         </option>
                     </select>
                 </div>
-        
+
                 <div class="form-field">
                     <label for="sort">並び替え</label>
-        
+
                     <!--
                         name="sort" は Controller の @RequestParam(name = "sort") と対応します。
                         selectedSort は、現在選択中の並び替え条件です。
                     -->
                     <select id="sort" name="sort">
-                        <option th:each="sortType : ${sortTypes}"
-                                th:value="${sortType}"
-                                th:text="${sortType.displayName}"
-                                th:selected="${sortType == selectedSort}">
+                        <option th:each="sortType : ${sortTypes}" th:value="${sortType}"
+                            th:text="${sortType.displayName}" th:selected="${sortType == selectedSort}">
                         </option>
                     </select>
                 </div>
-        
+
                 <div class="form-field">
                     <label for="keyword">検索</label>
-        
+
                     <!--
                         name="keyword" は Controller の @RequestParam(name = "keyword") と対応します。
                         valueには現在の検索キーワードを入れて、検索後も入力欄に文字が残るようにします。
                     -->
-                    <input type="text"
-                        id="keyword"
-                        name="keyword"
-                        th:value="${keyword}"
-                        placeholder="タイトルで検索">
+                    <input type="text" id="keyword" name="keyword" th:value="${keyword}" placeholder="タイトルで検索">
                 </div>
-        
+
                 <div class="form-actions">
                     <button class="primary-button" type="submit">変更</button>
                     <a class="button-link remember-scroll-link" th:href="@{/tasklist}">リセット</a>
@@ -164,25 +153,19 @@
             Controllerから渡された tasks をカード形式で1件ずつ表示します。
         -->
         <div class="task-list">
-            <article class="task-card"
-                    th:each="task : ${tasks}"
-                    th:classappend="${task.done} ? ' task-card-done' : ''">
+            <article class="task-card" th:each="task : ${tasks}" th:classappend="${task.done} ? ' task-card-done' : ''">
 
                 <div class="task-card-header">
-                    <h3 class="task-title"
-                        th:text="${task.title}">
+                    <h3 class="task-title" th:text="${task.title}">
                         タスクタイトル
                     </h3>
 
-                    <span class="priority-badge"
-                        th:text="${task.priority.displayName}">
+                    <span class="priority-badge" th:text="${task.priority.displayName}">
                         中
                     </span>
                 </div>
 
-                <p class="task-due-date"
-                th:classappend="${task.dueDateClass}"
-                th:text="${task.dueDateLabel}">
+                <p class="task-due-date" th:classappend="${task.dueDateClass}" th:text="${task.dueDateLabel}">
                     期限なし
                 </p>
 
@@ -192,14 +175,12 @@
                         現在の表示条件をhiddenで送ることで、操作後も同じ条件の一覧へ戻ります。
                     -->
                     <form class="inline-form remember-scroll-form"
-                          th:action="@{/tasklist/tasks/{id}/toggle(id=${task.id})}"
-                          method="post">
+                        th:action="@{/tasklist/tasks/{id}/toggle(id=${task.id})}" method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
                         <input type="hidden" name="keyword" th:value="${keyword}">
 
-                        <button type="submit"
-                                th:text="${task.done} ? '未完了に戻す' : '完了'">
+                        <button type="submit" th:text="${task.done} ? '未完了に戻す' : '完了'">
                             完了
                         </button>
                     </form>
@@ -208,8 +189,7 @@
                         編集画面へのリンクです。
                         現在の表示条件をクエリパラメータとして渡します。
                     -->
-                    <a class="button-link"
-                    th:href="@{/tasklist/tasks/{id}/edit(
+                    <a class="button-link" th:href="@{/tasklist/tasks/{id}/edit(
                         id=${task.id},
                         filter=${selectedFilter},
                         sort=${selectedSort},
@@ -223,8 +203,7 @@
                         現在の表示条件をhiddenで送ることで、削除後も同じ条件の一覧へ戻ります。
                     -->
                     <form class="inline-form remember-scroll-form"
-                          th:action="@{/tasklist/tasks/{id}/delete(id=${task.id})}"
-                          method="post">
+                        th:action="@{/tasklist/tasks/{id}/delete(id=${task.id})}" method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
                         <input type="hidden" name="keyword" th:value="${keyword}">
@@ -236,42 +215,42 @@
         </div>
     </section>
 
-<script>
-    /*
-     * フォーム送信やリンク移動後に、画面のスクロール位置を復元します。
-     *
-     * 完了切り替え、削除、表示条件変更などではページ全体が再表示されます。
-     * そのままだと画面上部に戻ってしまうため、操作前のスクロール位置を
-     * sessionStorageに保存し、再表示後に同じ位置へ戻します。
-     */
-    document.addEventListener("DOMContentLoaded", function () {
-        const scrollY = sessionStorage.getItem("tasklistScrollY");
+    <script>
+        /*
+         * フォーム送信やリンク移動後に、画面のスクロール位置を復元します。
+         *
+         * 完了切り替え、削除、表示条件変更などではページ全体が再表示されます。
+         * そのままだと画面上部に戻ってしまうため、操作前のスクロール位置を
+         * sessionStorageに保存し、再表示後に同じ位置へ戻します。
+         */
+        document.addEventListener("DOMContentLoaded", function () {
+            const scrollY = sessionStorage.getItem("tasklistScrollY");
 
-        if (scrollY !== null) {
-            window.scrollTo(0, Number(scrollY));
-            sessionStorage.removeItem("tasklistScrollY");
+            if (scrollY !== null) {
+                window.scrollTo(0, Number(scrollY));
+                sessionStorage.removeItem("tasklistScrollY");
+            }
+
+            document.querySelectorAll(".remember-scroll-form").forEach(function (form) {
+                form.addEventListener("submit", function () {
+                    saveScrollPosition();
+                });
+            });
+
+            document.querySelectorAll(".remember-scroll-link").forEach(function (link) {
+                link.addEventListener("click", function () {
+                    saveScrollPosition();
+                });
+            });
+        });
+
+        /*
+         * 現在のスクロール位置をsessionStorageに保存します。
+         */
+        function saveScrollPosition() {
+            sessionStorage.setItem("tasklistScrollY", window.scrollY);
         }
-
-        document.querySelectorAll(".remember-scroll-form").forEach(function (form) {
-            form.addEventListener("submit", function () {
-                saveScrollPosition();
-            });
-        });
-
-        document.querySelectorAll(".remember-scroll-link").forEach(function (link) {
-            link.addEventListener("click", function () {
-                saveScrollPosition();
-            });
-        });
-    });
-
-    /*
-     * 現在のスクロール位置をsessionStorageに保存します。
-     */
-    function saveScrollPosition() {
-        sessionStorage.setItem("tasklistScrollY", window.scrollY);
-    }
-</script>
+    </script>
 
 </body>
 

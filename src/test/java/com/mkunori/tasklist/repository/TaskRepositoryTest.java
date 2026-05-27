@@ -135,10 +135,9 @@ class TaskRepositoryTest {
         taskRepository.save(springTask2);
         taskRepository.save(otherOwnerTask);
 
-        List<Task> actual =
-                taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(
-                        OWNER_A,
-                        "Spring");
+        List<Task> actual = taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByIdAsc(
+                OWNER_A,
+                "Spring");
 
         assertEquals(2, actual.size());
         assertEquals("Spring Bootを学ぶ", actual.get(0).getTitle());
@@ -164,11 +163,10 @@ class TaskRepositoryTest {
         taskRepository.save(undoneJavaTask);
         taskRepository.save(otherOwnerSpringTask);
 
-        List<Task> actual =
-                taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(
-                        OWNER_A,
-                        false,
-                        "Spring");
+        List<Task> actual = taskRepository.findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByIdAsc(
+                OWNER_A,
+                false,
+                "Spring");
 
         assertEquals(1, actual.size());
         assertEquals("Spring Bootを学ぶ", actual.get(0).getTitle());
@@ -217,10 +215,9 @@ class TaskRepositoryTest {
         taskRepository.save(highDoneTask);
         taskRepository.save(otherOwnerHighTask);
 
-        List<Task> actual =
-                taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
-                        OWNER_A,
-                        false);
+        List<Task> actual = taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
+                OWNER_A,
+                false);
 
         assertEquals(2, actual.size());
         assertEquals("高優先度の未完了タスク", actual.get(0).getTitle());
@@ -242,10 +239,9 @@ class TaskRepositoryTest {
         taskRepository.save(mediumJavaTask);
         taskRepository.save(otherOwnerHighSpringTask);
 
-        List<Task> actual =
-                taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
-                        OWNER_A,
-                        "Spring");
+        List<Task> actual = taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+                OWNER_A,
+                "Spring");
 
         assertEquals(2, actual.size());
         assertEquals("Spring高優先度", actual.get(0).getTitle());
@@ -264,15 +260,13 @@ class TaskRepositoryTest {
 
         taskRepository.deleteByIdAndOwnerId(savedTask.getId(), OWNER_B);
 
-        Optional<Task> taskAfterWrongOwnerDelete =
-                taskRepository.findById(savedTask.getId());
+        Optional<Task> taskAfterWrongOwnerDelete = taskRepository.findById(savedTask.getId());
 
         assertTrue(taskAfterWrongOwnerDelete.isPresent());
 
         taskRepository.deleteByIdAndOwnerId(savedTask.getId(), OWNER_A);
 
-        Optional<Task> taskAfterCorrectOwnerDelete =
-                taskRepository.findById(savedTask.getId());
+        Optional<Task> taskAfterCorrectOwnerDelete = taskRepository.findById(savedTask.getId());
 
         assertTrue(taskAfterCorrectOwnerDelete.isEmpty());
     }

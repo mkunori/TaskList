@@ -228,7 +228,8 @@ class TaskControllerTest {
                                 .param("sort", "DUE_DATE")
                                 .param("keyword", "Spring"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrlPattern("/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
+                                .andExpect(redirectedUrlPattern(
+                                                "/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
 
                 verify(anonymousUserService).getOrCreateOwnerId(any(), any());
                 verify(taskService).findUpdateFormById(999L, TEST_OWNER_ID);
@@ -255,7 +256,8 @@ class TaskControllerTest {
                                 .param("sort", "DUE_DATE")
                                 .param("keyword", "Spring"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrlPattern("/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
+                                .andExpect(redirectedUrlPattern(
+                                                "/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
 
                 verify(taskService).updateTask(any(TaskUpdateForm.class), eq(TEST_OWNER_ID));
         }
@@ -304,7 +306,8 @@ class TaskControllerTest {
                                 .param("sort", "DUE_DATE")
                                 .param("keyword", "Spring"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrlPattern("/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
+                                .andExpect(redirectedUrlPattern(
+                                                "/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
 
                 verify(taskService).toggleTaskDone(1L, TEST_OWNER_ID);
         }

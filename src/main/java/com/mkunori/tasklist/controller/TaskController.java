@@ -81,7 +81,7 @@ public class TaskController {
      * @param model      画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
-    @GetMapping({"", "/"})
+    @GetMapping({ "", "/" })
     public String showTaskList(
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
