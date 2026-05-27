@@ -21,7 +21,6 @@ form {
 input,
 select,
 button {
-    margin: 4px;
     padding: 6px 8px;
 }
 
@@ -29,31 +28,9 @@ button {
     cursor: pointer;
 }
 
-ul {
-    padding-left: 0;
-}
-
-li {
-    list-style: none;
-    padding: 12px;
-    margin-bottom: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-}
-
 .task-title {
-    font-weight: bold;
-}
-
-.task-done {
-    color: #777;
-    text-decoration: line-through;
-}
-
-.task-meta {
-    margin-left: 8px;
-    color: #555;
-    font-size: 0.9rem;
+    margin: 0;
+    font-size: 1.1rem;
 }
 
 .due-overdue {
@@ -75,6 +52,168 @@ li {
     display: inline;
 }
 
-.actions {
-    margin-top: 8px;
+.task-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.task-card {
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background-color: #fff;
+}
+
+.task-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.task-title {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.task-card-done .task-title {
+    color: #777;
+    text-decoration: line-through;
+}
+
+.task-card-done {
+    background-color: #f8f8f8;
+}
+
+.task-due-date {
+    margin: 8px 0;
+}
+
+.priority-badge {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background-color: #f0f0f0;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.task-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    align-items: center;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.button-link {
+    display: inline-block;
+    margin: 4px;
+    padding: 6px 8px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    color: #333;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.button-link:hover {
+    background-color: #f0f0f0;
+}
+
+.panel {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background-color: #fff;
+}
+
+.panel h2 {
+    margin-top: 0;
+}
+
+.form-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+.form-field {
+    display: grid;
+    gap: 4px;
+}
+
+.form-field label {
+    font-weight: bold;
+}
+
+.form-field input,
+.form-field select {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.primary-button {
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #333;
+    color: #fff;
+}
+
+.primary-button:hover {
+    background-color: #555;
+}
+
+.app-description {
+    background-color: #f9fafb;
+}
+
+.app-description p {
+    margin: 8px 0;
+}
+
+.description-list li {
+    list-style: disc;
+    padding: 0;
+    margin-bottom: 4px;
+    border: none;
+    border-radius: 0;
+}
+
+.note {
+    padding: 12px;
+    border-left: 4px solid #999;
+    background-color: #fff;
+    color: #555;
+}
+
+.top-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 32px;
+}
+
+@media (max-width: 700px) {
+    .top-panels {
+        grid-template-columns: 1fr;
+    }
+}
+
+.top-panels .panel {
+    margin-bottom: 0;
 }

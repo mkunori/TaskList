@@ -15,6 +15,8 @@ Java / Spring Boot / JPA / H2 Database / PostgreSQL を使い、タスクの登�
 このアプリでは、タスク管理の基本操作や Spring Boot / JPA によるWebアプリ構成を見せることを優先しています。  
 そのため、ユーザー登録やログイン機能は実装せず、Cookie による匿名ユーザー識別でブラウザごとにタスクを分離しています。
 
+画面上部にはアプリケーション概要を表示し、基本的な使い方や、Cookieを使ってブラウザ単位でタスクを保持していることが分かるようにしています。
+
 現在は、以下の基本機能を実装しています。
 
 - タスクの新規登録
@@ -73,6 +75,15 @@ Spring Boot の基本的な構成に加えて、Controller / Service / Repositor
   - ログインなしでブラウザごとにタスクを分離
   - Cookieに保存した匿名ユーザーIDを使用
   - DBでは `owner_id` によってタスクの所有者を管理
+- 基本的なCSSによる表示改善
+  - シンプルなカード型レイアウト
+  - アプリ説明パネルの表示
+  - 登録フォームと表示条件フォームの横並び表示
+  - 画面幅が狭い場合の縦並び表示
+  - 完了済みタスクの取り消し線
+  - 期限切れタスクの強調表示
+  - 今日が期限のタスクの強調表示
+  - エラーメッセージの強調表示
 
 ## 使用技術
 
@@ -200,7 +211,7 @@ sequenceDiagram
     participant Database
 
     User->>Browser: タイトル・期限・優先度を入力して追加
-    Browser->>TaskController: POST /tasks
+    Browser->>TaskController: POST /tasklist/tasks
     TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
     AnonymousUserService-->>TaskController: ownerId
     TaskController->>TaskController: 入力チェック
@@ -239,7 +250,7 @@ sequenceDiagram
     participant Database
 
     User->>Browser: 編集内容を入力して更新
-    Browser->>TaskController: POST /tasks/{id}/update
+    Browser->>TaskController: POST /tasklist/tasks/{id}/update
     TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
     AnonymousUserService-->>TaskController: ownerId
     TaskController->>TaskController: 入力チェック
@@ -314,7 +325,7 @@ tasks.html
 
 ```text
 ブラウザのフォーム
-  ↓ POST /tasks
+  ↓ POST /tasklist/tasks
 TaskForm
   ↓
 TaskController
@@ -340,7 +351,7 @@ TaskRepository
 edit-task.html
 
 編集フォーム
-  ↓ POST /tasks/{id}/update
+  ↓ POST /tasklist/tasks/{id}/update
 TaskUpdateForm
   ↓
 TaskController
@@ -356,7 +367,7 @@ H2 Database
 
 ```text
 完了ボタン
-  ↓ POST /tasks/{id}/toggle
+  ↓ POST /tasklist/tasks/{id}/toggle
 TaskController
   ↓
 TaskService
@@ -370,7 +381,7 @@ H2 Database
 
 ```text
 削除ボタン
-  ↓ POST /tasks/{id}/delete
+  ↓ POST /tasklist/tasks/{id}/delete
 TaskController
   ↓
 TaskService
@@ -592,15 +603,15 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 ## 今後の改善予定
 
 - PostgreSQL環境での動作確認強化
-- テストコードのさらなる拡充
-  - Controller層の異常系テスト追加
-  - Repository層の組み合わせ条件テスト追加
-- 画面デザインの改善
-  - 見やすいカード型レイアウト
-  - スマートフォンでも見やすいレスポンシブ対応
+- 画面デザインのさらなる改善
+  - スマートフォン表示の細かな調整
+  - ボタンや余白の見た目改善
 - デプロイ準備
   - 本番用プロファイルの整理
   - 環境変数による設定管理
+- テストコードのさらなる拡充
+  - Controller層の異常系テスト追加
+  - 画面遷移やURL変更に関するテスト追加
 
 ## 学習ポイント
 
@@ -634,3 +645,6 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 - Bean Validationの単体テスト
 - `Validator` を使ったForm入力チェックの確認
 - Repositoryメソッド名クエリと `@Query` の動作確認
+- CSS Gridを使ったシンプルなカード型レイアウト
+- 画面幅に応じたフォーム配置の切り替え
+- ユーザー向け説明文を画面上に表示するUI改善
