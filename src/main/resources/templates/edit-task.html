@@ -18,9 +18,9 @@
         タスク編集フォームです。
         th:object="${taskUpdateForm}" は、Controllerから渡されたTaskUpdateFormと対応します。
     -->
-    <form th:action="@{/tasks/{id}/update(id=${taskUpdateForm.id})}"
-          th:object="${taskUpdateForm}"
-          method="post">
+    <form th:action="@{/tasklist/tasks/{id}/update(id=${taskUpdateForm.id})}"
+        th:object="${taskUpdateForm}"
+        method="post">
 
         <!--
             更新対象のidを隠し項目として送信します。
@@ -89,10 +89,10 @@
         <!--
             編集前の表示条件を維持したまま一覧へ戻ります。
         -->
-        <a th:href="@{/(
-                filter=${selectedFilter},
-                sort=${selectedSort},
-                keyword=${keyword}
+        <a th:href="@{/tasklist(
+            filter=${selectedFilter},
+            sort=${selectedSort},
+            keyword=${keyword}
             )}">一覧へ戻る</a>
     </p>
 </body>

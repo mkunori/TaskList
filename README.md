@@ -276,7 +276,7 @@ sequenceDiagram
     participant Database
 
     User->>Browser: 表示条件・並び替え・キーワードを指定
-    Browser->>TaskController: GET /?filter=...&sort=...&keyword=...
+    Browser->>TaskController: GET /tasklist?filter=...&sort=...&keyword=...
     TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
     AnonymousUserService-->>TaskController: ownerId
     TaskController->>TaskService: findTasks(ownerId, filterType, sortType, keyword)
@@ -296,7 +296,7 @@ sequenceDiagram
 
 ```text
 ブラウザ
-  ↓ GET /
+  ↓ GET /tasklist
 TaskController
   ↓
 TaskService
@@ -330,7 +330,7 @@ H2 Database
 
 ```text
 編集リンク
-  ↓ GET /tasks/{id}/edit
+  ↓ GET /tasklist/tasks/{id}/edit
 TaskController
   ↓
 TaskService
@@ -384,9 +384,9 @@ H2 Database
 
 ```text
 表示条件・並び替え条件・キーワードを指定
-  ↓ GET /?filter=ALL&sort=CREATED&keyword=
-     GET /?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
-     GET /?filter=DONE&sort=PRIORITY&keyword=Java
+  ↓ GET /tasklist?filter=ALL&sort=CREATED&keyword=
+     GET /tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
+     GET /tasklist?filter=DONE&sort=PRIORITY&keyword=Java
 TaskController
   ↓ Cookieから匿名ユーザーIDを取得
 AnonymousUserService
@@ -447,7 +447,7 @@ mvnw.cmd spring-boot:run
 ### ③ ブラウザでアクセス
 
 ```text
-http://localhost:8080/
+http://localhost:8080/tasklist
 ```
 
 ## データベース

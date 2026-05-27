@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -33,6 +34,7 @@ import jakarta.validation.Valid;
  * Serviceへ処理を依頼して、次に表示する画面を決めます。
  */
 @Controller
+@RequestMapping("/tasklist")
 public class TaskController {
 
     /**
@@ -79,7 +81,7 @@ public class TaskController {
      * @param model      画面へ値を渡すためのオブジェクト
      * @return 表示するテンプレート名
      */
-    @GetMapping("/")
+    @GetMapping({"", "/"})
     public String showTaskList(
             @RequestParam(name = "filter", defaultValue = "ALL") TaskFilterType filterType,
             @RequestParam(name = "sort", defaultValue = "CREATED") TaskSortType sortType,
@@ -369,7 +371,7 @@ public class TaskController {
 
         String safeKeyword = keyword == null ? "" : keyword;
 
-        String url = UriComponentsBuilder.fromPath("/")
+        String url = UriComponentsBuilder.fromPath("/tasklist")
                 .queryParam("filter", filterType)
                 .queryParam("sort", sortType)
                 .queryParam("keyword", safeKeyword)

@@ -22,7 +22,7 @@
             タスク追加フォームです。
             th:object="${taskForm}" は、Controllerから渡されたTaskFormと対応します。
         -->
-        <form th:action="@{/tasks}" th:object="${taskForm}" method="post">
+        <form th:action="@{/tasklist/tasks}" th:object="${taskForm}" method="post">
             <div>
                 <label for="title">タイトル</label>
 
@@ -87,7 +87,7 @@
             method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
             例: /?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
         -->
-        <form th:action="@{/}" method="get">
+        <form th:action="@{/tasklist}" method="get">
             <div>
                 <label for="filter">表示</label>
     
@@ -192,18 +192,13 @@
                         編集画面へ移動するリンクです。
                         現在の表示条件もURLに含めて、更新後に同じ一覧へ戻れるようにします。
                     -->
-                    <a th:href="@{/tasks/{id}/edit(
-                            id=${task.id},
-                            filter=${selectedFilter},
-                            sort=${selectedSort},
-                            keyword=${keyword}
-                        )}">編集</a>
+                    <a th:href="@{/tasklist/tasks/{id}/edit(id=${task.id}, filter=${selectedFilter}, sort=${selectedSort}, keyword=${keyword})}">編集</a>
     
                     <!--
                         完了状態を切り替えるフォームです。
                     -->
                     <form class="inline-form"
-                        th:action="@{/tasks/{id}/toggle(id=${task.id})}"
+                        th:action="@{/tasklist/tasks/{id}/toggle(id=${task.id})}"
                         method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
@@ -218,7 +213,7 @@
                         削除フォームです。
                     -->
                     <form class="inline-form"
-                        th:action="@{/tasks/{id}/delete(id=${task.id})}"
+                        th:action="@{/tasklist/tasks/{id}/delete(id=${task.id})}"
                         method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
