@@ -531,6 +531,22 @@ mvnw.cmd test
 - AnonymousUserServiceの単体テスト
   - Cookieに匿名ユーザーIDがある場合はそのIDを返す
   - Cookieがない場合は新しいIDを作成してCookieへ保存する
+- TaskFormのバリデーションテスト
+  - 正しい入力ならエラーなし
+  - タイトル空欄・空白のみ・長すぎる入力のチェック
+  - 優先度未選択のチェック
+  - 期限日未入力を許可することの確認
+- TaskUpdateFormのバリデーションテスト
+  - 正しい入力ならエラーなし
+  - タイトル空欄・空白のみ・長すぎる入力のチェック
+  - 優先度未選択のチェック
+  - 期限日未入力を許可することの確認
+- TaskRepositoryのテスト
+  - ownerIdによるタスク分離
+  - 完了状態による絞り込み
+  - キーワード検索
+  - 登録順・期限順・優先度順の並び替え
+  - id + ownerId による取得・削除
 
 ### テスト対象
 
@@ -541,6 +557,11 @@ src/test/java/com/mkunori/tasklist
 │  └─ TaskControllerTest.java           // TaskControllerのWeb層テスト
 ├─ entity
 │  └─ TaskTest.java                     // Taskエンティティの単体テスト
+├─ form
+│  ├─ TaskFormTest.java                 // タスク登録フォームのバリデーションテスト
+│  └─ TaskUpdateFormTest.java           // タスク編集フォームのバリデーションテスト
+├─ repository
+│  └─ TaskRepositoryTest.java           // TaskRepositoryのJPAテスト
 └─ service
    ├─ AnonymousUserServiceTest.java     // Cookieベース匿名ユーザーID管理の単体テスト
    └─ TaskServiceTest.java              // TaskServiceの単体テスト
@@ -571,9 +592,9 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 ## 今後の改善予定
 
 - PostgreSQL環境での動作確認強化
-- テストコードの拡充
-  - Repository層のテスト
-  - Formバリデーションのテスト
+- テストコードのさらなる拡充
+  - Controller層の異常系テスト追加
+  - Repository層の組み合わせ条件テスト追加
 - 画面デザインの改善
   - 見やすいカード型レイアウト
   - スマートフォンでも見やすいレスポンシブ対応
@@ -609,3 +630,7 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
 - ServiceをモックにしたWeb層のテスト
 - Cookieを使った匿名ユーザー識別
 - ownerIdによるブラウザごとのタスク分離
+- `@DataJpaTest` を使ったRepository層のテスト
+- Bean Validationの単体テスト
+- `Validator` を使ったForm入力チェックの確認
+- Repositoryメソッド名クエリと `@Query` の動作確認
