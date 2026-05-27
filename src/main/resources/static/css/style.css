@@ -1,3 +1,11 @@
+/* ===== 全体 ===== */
+
+/*
+ * ページ全体の横幅と基本文字設定です。
+ *
+ * max-width を指定することで、PC画面でも横に広がりすぎないようにしています。
+ * margin: 32px auto により、画面中央に配置します。
+ */
 body {
     max-width: 900px;
     margin: 32px auto;
@@ -6,126 +14,26 @@ body {
     line-height: 1.6;
 }
 
+/*
+ * アプリ名の下に余白を作ります。
+ */
 h1 {
     margin-bottom: 24px;
 }
 
+/*
+ * 各セクション同士の間隔を空けます。
+ */
 section {
     margin-bottom: 32px;
 }
 
-form {
-    margin-bottom: 16px;
-}
 
-input,
-select,
-button {
-    padding: 6px 8px;
-}
+/* ===== パネル ===== */
 
-button {
-    cursor: pointer;
-}
-
-.task-title {
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.due-overdue {
-    color: #c62828;
-    font-weight: bold;
-}
-
-.due-today {
-    color: #ef6c00;
-    font-weight: bold;
-}
-
-.error-message {
-    color: #c62828;
-    font-weight: bold;
-}
-
-.inline-form {
-    display: inline;
-}
-
-.task-list {
-    display: grid;
-    gap: 16px;
-    margin-top: 24px;
-}
-
-.task-card {
-    padding: 16px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    background-color: #fff;
-}
-
-.task-card-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: center;
-}
-
-.task-title {
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.task-card-done .task-title {
-    color: #777;
-    text-decoration: line-through;
-}
-
-.task-card-done {
-    background-color: #f8f8f8;
-}
-
-.task-due-date {
-    margin: 8px 0;
-}
-
-.priority-badge {
-    padding: 4px 8px;
-    border-radius: 999px;
-    background-color: #f0f0f0;
-    font-size: 0.85rem;
-    white-space: nowrap;
-}
-
-.task-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-    align-items: center;
-}
-
-.inline-form {
-    display: inline;
-    margin: 0;
-}
-
-.button-link {
-    display: inline-block;
-    margin: 4px;
-    padding: 6px 8px;
-    border: 1px solid #999;
-    border-radius: 4px;
-    color: #333;
-    text-decoration: none;
-    font-size: 0.9rem;
-}
-
-.button-link:hover {
-    background-color: #f0f0f0;
-}
-
+/*
+ * フォームや説明欄をカード風に見せるための共通クラスです。
+ */
 .panel {
     padding: 20px;
     border: 1px solid #ddd;
@@ -133,73 +41,18 @@ button {
     background-color: #fff;
 }
 
+/*
+ * パネル内の見出しは、上側の余白をなくして揃えます。
+ */
 .panel h2 {
     margin-top: 0;
 }
 
-.form-grid {
-    display: grid;
-    gap: 12px;
-    margin-bottom: 0;
-}
-
-.form-field {
-    display: grid;
-    gap: 4px;
-}
-
-.form-field label {
-    font-weight: bold;
-}
-
-.form-field input,
-.form-field select {
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0;
-}
-
-.form-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.primary-button {
-    border: 1px solid #333;
-    border-radius: 4px;
-    background-color: #333;
-    color: #fff;
-}
-
-.primary-button:hover {
-    background-color: #555;
-}
-
-.app-description {
-    background-color: #f9fafb;
-}
-
-.app-description p {
-    margin: 8px 0;
-}
-
-.description-list li {
-    list-style: disc;
-    padding: 0;
-    margin-bottom: 4px;
-    border: none;
-    border-radius: 0;
-}
-
-.note {
-    padding: 12px;
-    border-left: 4px solid #999;
-    background-color: #fff;
-    color: #555;
-}
-
+/*
+ * 「新しいタスクを追加」と「表示条件」を横並びにします。
+ *
+ * grid-template-columns: 1fr 1fr により、左右を同じ幅にします。
+ */
 .top-panels {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -208,12 +61,325 @@ button {
     margin-bottom: 32px;
 }
 
+/*
+ * top-panels 内の panel は、親要素側で余白を管理するため、
+ * section の margin-bottom を打ち消します。
+ */
+.top-panels .panel {
+    margin-bottom: 0;
+}
+
+
+/* ===== フォーム ===== */
+
+/*
+ * 通常のフォーム下部に余白を持たせます。
+ */
+form {
+    margin-bottom: 16px;
+}
+
+/*
+ * フォーム内の入力欄を縦に並べます。
+ *
+ * gap を使うことで、各入力欄の間隔をまとめて管理できます。
+ */
+.form-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 0;
+}
+
+/*
+ * label と input/select を1セットとして縦に並べます。
+ */
+.form-field {
+    display: grid;
+    gap: 4px;
+}
+
+/*
+ * 入力項目名を少し目立たせます。
+ */
+.form-field label {
+    font-weight: bold;
+}
+
+/*
+ * フォーム内の入力欄をパネル幅いっぱいに広げます。
+ *
+ * box-sizing: border-box により、padding を含めても
+ * 横幅が親要素からはみ出しにくくなります。
+ */
+.form-field input,
+.form-field select {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+/*
+ * フォーム内のボタンやリンクを横並びにします。
+ *
+ * flex-wrap: wrap により、画面幅が狭いときは自然に折り返します。
+ */
+.form-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/*
+ * 入力欄、セレクトボックス、ボタンの基本的な余白です。
+ */
+input,
+select,
+button {
+    padding: 6px 8px;
+}
+
+/*
+ * ボタンにマウスを乗せたとき、クリックできることが分かるようにします。
+ */
+button {
+    cursor: pointer;
+}
+
+/*
+ * タスクカード内の小さなフォームを横並び部品として扱います。
+ *
+ * 完了切り替えや削除ボタンのフォームに使います。
+ */
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+
+/* ===== ボタン・リンク ===== */
+
+/*
+ * 主要操作ボタンです。
+ *
+ * タスク追加や表示条件変更など、画面上の主な操作に使います。
+ */
+.primary-button {
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #333;
+    color: #fff;
+}
+
+/*
+ * 主要操作ボタンにマウスを乗せたときの見た目です。
+ */
+.primary-button:hover {
+    background-color: #555;
+}
+
+/*
+ * リンクをボタンのように見せるためのクラスです。
+ *
+ * 編集リンクやリセットリンクに使います。
+ */
+.button-link {
+    display: inline-block;
+    padding: 6px 8px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    color: #333;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+/*
+ * ボタン風リンクにマウスを乗せたときの見た目です。
+ */
+.button-link:hover {
+    background-color: #f0f0f0;
+}
+
+
+/* ===== タスクカード ===== */
+
+/*
+ * タスクカードの一覧を縦に並べます。
+ */
+.task-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+/*
+ * 1件分のタスクをカード風に表示します。
+ */
+.task-card {
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background-color: #fff;
+}
+
+/*
+ * 完了済みタスクのカード背景です。
+ *
+ * 未完了タスクより少し控えめに見えるようにしています。
+ */
+.task-card-done {
+    background-color: #f8f8f8;
+}
+
+/*
+ * タスクタイトルと優先度バッジを横並びにします。
+ */
+.task-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+/*
+ * タスクタイトルの基本表示です。
+ */
+.task-title {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/*
+ * 完了済みタスクのタイトルに取り消し線を付けます。
+ */
+.task-card-done .task-title {
+    color: #777;
+    text-decoration: line-through;
+}
+
+/*
+ * 期限表示の余白です。
+ */
+.task-due-date {
+    margin: 8px 0;
+}
+
+/*
+ * 優先度を小さなラベル風に表示します。
+ */
+.priority-badge {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background-color: #f0f0f0;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/*
+ * タスク操作ボタンを横並びにします。
+ *
+ * 完了、編集、削除ボタンが並びます。
+ */
+.task-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    align-items: center;
+}
+
+
+/* ===== 状態表示 ===== */
+
+/*
+ * 期限切れタスクの期限表示です。
+ */
+.due-overdue {
+    color: #c62828;
+    font-weight: bold;
+}
+
+/*
+ * 今日が期限のタスクの期限表示です。
+ */
+.due-today {
+    color: #ef6c00;
+    font-weight: bold;
+}
+
+/*
+ * 入力エラーメッセージの表示です。
+ */
+.error-message {
+    color: #c62828;
+    font-weight: bold;
+}
+
+
+/* ===== アプリ説明 ===== */
+
+/*
+ * アプリ説明欄の背景色です。
+ *
+ * 他の操作パネルより少しだけ淡い背景にして、
+ * 説明エリアであることを分かりやすくしています。
+ */
+.app-description {
+    background-color: #f9fafb;
+}
+
+/*
+ * アプリ説明内の段落の余白です。
+ */
+.app-description p {
+    margin: 8px 0;
+}
+
+/*
+ * 説明用の箇条書きがある場合の表示です。
+ */
+.description-list {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+/*
+ * 説明用リストの項目です。
+ *
+ * タスクカード用の装飾が付かないよう、通常の箇条書きとして表示します。
+ */
+.description-list li {
+    list-style: disc;
+    padding: 0;
+    margin-bottom: 4px;
+    border: none;
+    border-radius: 0;
+}
+
+/*
+ * 注意書き用の表示です。
+ *
+ * Cookieによるブラウザ単位の保持など、
+ * ユーザーに知ってほしい補足情報に使います。
+ */
+.note {
+    padding: 12px;
+    border-left: 4px solid #999;
+    background-color: #fff;
+    color: #555;
+}
+
+
+/* ===== レスポンシブ対応 ===== */
+
+/*
+ * 画面幅が狭い場合は、上部の2カラム表示を1カラムにします。
+ *
+ * スマートフォンや狭いブラウザ幅でも、
+ * 入力フォームが横に詰まりすぎないようにします。
+ */
 @media (max-width: 700px) {
     .top-panels {
         grid-template-columns: 1fr;
     }
-}
-
-.top-panels .panel {
-    margin-bottom: 0;
 }
