@@ -88,8 +88,6 @@ Spring Boot の基本的な構成に加えて、Controller / Service / Repositor
 
 ## 使用技術
 
-## 使用技術
-
 - Java 21
 - Spring Boot
 - Spring Data JPA（Hibernate）

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mkunori.tasklist.entity.Priority;
 import com.mkunori.tasklist.entity.Task;
@@ -306,6 +307,7 @@ public class TaskService {
      * @param id      削除するタスクのID
      * @param ownerId 匿名ユーザーID
      */
+    @Transactional
     public void deleteTask(Long id, String ownerId) {
         taskRepository.deleteByIdAndOwnerId(id, ownerId);
     }
