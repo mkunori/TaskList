@@ -5,11 +5,15 @@ Spring Boot を用いたWebアプリ開発の学習として作成しました�
 
 Java / Spring Boot / JPA / H2 Database / PostgreSQL を使い、タスクの登録・一覧表示・更新・削除・完了状態の切り替え、期限・優先度の管理、絞り込み、キーワード検索、並び替え機能を実装しています。
 
-また、ログイン機能の代わりに Cookie ベースの匿名ユーザー識別を導入し、ブラウザごとにタスクを分離しています。
+タスク管理アプリとしての基本動作を見せることを優先するため、ログイン機能は実装していません。  
+代わりに、Cookie ベースの匿名ユーザー識別を導入し、ブラウザごとにタスクを分離しています。
 
 ## アプリケーション概要
 
 ブラウザ上でタスクを管理できるWebアプリです。
+
+このアプリでは、タスク管理の基本操作や Spring Boot / JPA によるWebアプリ構成を見せることを優先しています。  
+そのため、ユーザー登録やログイン機能は実装せず、Cookie による匿名ユーザー識別でブラウザごとにタスクを分離しています。
 
 現在は、以下の基本機能を実装しています。
 
@@ -33,7 +37,9 @@ Java / Spring Boot / JPA / H2 Database / PostgreSQL を使い、タスクの登�
 - 入力バリデーション
 - 基本的なCSSによる表示改善
 
-Spring Boot の基本的な構成に加えて、Controller / Service / Repository の役割分担を意識して実装しています。
+Spring Boot の基本的な構成に加えて、Controller / Service / Repository の役割分担を意識して実装しています。  
+
+検索・絞り込み・並び替えは、Serviceで条件を判断し、Repository / DB側で条件付き取得を行う構成にしています。
 
 ## 主な機能
 
@@ -70,9 +76,12 @@ Spring Boot の基本的な構成に加えて、Controller / Service / Repositor
 
 ## 使用技術
 
-- Java 17
+## 使用技術
+
+- Java 21
 - Spring Boot
 - Spring Data JPA（Hibernate）
+- JPQL（@Query）
 - Thymeleaf
 - H2 Database（開発用）
 - PostgreSQL（実DB確認用）
@@ -160,7 +169,7 @@ classDiagram
 
 ## 匿名ユーザー識別
 
-このアプリでは、ログイン機能は実装していません。  
+このアプリでは、タスク管理の基本動作を見せることを優先するため、ログイン機能は実装していません。  
 代わりに、ブラウザのCookieに匿名ユーザーIDを保存し、そのIDを使ってブラウザごとにタスクを分離しています。
 
 初回アクセス時にCookieが存在しない場合は、サーバ側で匿名ユーザーIDを作成し、Cookieへ保存します。  
@@ -185,22 +194,31 @@ sequenceDiagram
     actor User
     participant Browser
     participant TaskController
+    participant AnonymousUserService
     participant TaskService
     participant TaskRepository
-    participant H2Database
+    participant Database
 
     User->>Browser: タイトル・期限・優先度を入力して追加
     Browser->>TaskController: POST /tasks
+    TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
+    AnonymousUserService-->>TaskController: ownerId
     TaskController->>TaskController: 入力チェック
 
     alt 入力エラーあり
+        TaskController->>TaskService: findTasks(ownerId, filterType, sortType, keyword)
+        TaskService->>TaskRepository: 条件に応じた検索・並び替え
+        TaskRepository->>Database: SELECT ... WHERE owner_id = ...
+        Database-->>TaskRepository: タスク一覧
+        TaskRepository-->>TaskService: タスク一覧
+        TaskService-->>TaskController: タスク一覧
         TaskController-->>Browser: tasks.html を返す
         Browser-->>User: エラーメッセージを表示
     else 入力エラーなし
-        TaskController->>TaskService: addTask(title, dueDate, priority)
+        TaskController->>TaskService: addTask(title, dueDate, priority, ownerId)
         TaskService->>TaskRepository: save(task)
-        TaskRepository->>H2Database: INSERT INTO tasks ...
-        H2Database-->>TaskRepository: 保存完了
+        TaskRepository->>Database: INSERT INTO tasks ...
+        Database-->>TaskRepository: 保存完了
         TaskRepository-->>TaskService: 保存済みTask
         TaskService-->>TaskController: 保存完了
         TaskController-->>Browser: 条件を維持して redirect:/
@@ -215,26 +233,29 @@ sequenceDiagram
     actor User
     participant Browser
     participant TaskController
+    participant AnonymousUserService
     participant TaskService
     participant TaskRepository
-    participant H2Database
+    participant Database
 
     User->>Browser: 編集内容を入力して更新
     Browser->>TaskController: POST /tasks/{id}/update
+    TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
+    AnonymousUserService-->>TaskController: ownerId
     TaskController->>TaskController: 入力チェック
 
     alt 入力エラーあり
         TaskController-->>Browser: edit-task.html を返す
         Browser-->>User: エラーメッセージを表示
     else 入力エラーなし
-        TaskController->>TaskService: updateTask(taskUpdateForm)
-        TaskService->>TaskRepository: findById(id)
-        TaskRepository->>H2Database: SELECT * FROM tasks WHERE id = ?
-        H2Database-->>TaskRepository: Task
+        TaskController->>TaskService: updateTask(taskUpdateForm, ownerId)
+        TaskService->>TaskRepository: findByIdAndOwnerId(id, ownerId)
+        TaskRepository->>Database: SELECT * FROM tasks WHERE id = ? AND owner_id = ?
+        Database-->>TaskRepository: Task
         TaskRepository-->>TaskService: Task
         TaskService->>TaskRepository: save(updatedTask)
-        TaskRepository->>H2Database: UPDATE tasks SET ...
-        H2Database-->>TaskRepository: 更新完了
+        TaskRepository->>Database: UPDATE tasks SET ...
+        Database-->>TaskRepository: 更新完了
         TaskRepository-->>TaskService: 更新済みTask
         TaskService-->>TaskController: 更新結果
         TaskController-->>Browser: 条件を維持して redirect:/
@@ -259,14 +280,12 @@ sequenceDiagram
     TaskController->>AnonymousUserService: getOrCreateOwnerId(request, response)
     AnonymousUserService-->>TaskController: ownerId
     TaskController->>TaskService: findTasks(ownerId, filterType, sortType, keyword)
-    TaskService->>TaskRepository: findByOwnerId(ownerId)
-    TaskRepository->>Database: SELECT * FROM tasks WHERE owner_id = ?
-    Database-->>TaskRepository: タスク一覧
+    TaskService->>TaskService: 表示条件・並び替え条件・キーワードを整理
+    TaskService->>TaskRepository: 条件に応じたRepositoryメソッドを呼び出す
+    TaskRepository->>Database: owner_id / done / title / ORDER BY を含むSQLを実行
+    Database-->>TaskRepository: 条件に一致したタスク一覧
     TaskRepository-->>TaskService: タスク一覧
-    TaskService->>TaskService: 表示条件で絞り込み
-    TaskService->>TaskService: キーワードで検索
-    TaskService->>TaskService: 条件に応じて並び替え
-    TaskService-->>TaskController: 処理済みタスク一覧
+    TaskService-->>TaskController: タスク一覧
     TaskController-->>Browser: tasks.html を返す
     Browser-->>User: 検索・絞り込み・並び替え結果を表示
 ```
@@ -369,13 +388,15 @@ H2 Database
      GET /?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
      GET /?filter=DONE&sort=PRIORITY&keyword=Java
 TaskController
-  ↓
+  ↓ Cookieから匿名ユーザーIDを取得
+AnonymousUserService
+  ↓ ownerId
 TaskService
-  ↓
+  ↓ 表示条件・並び替え条件・キーワードを整理
 TaskRepository
-  ↓
-Java側で絞り込み・検索・並び替え
-  ↓
+  ↓ Repositoryメソッド名クエリ / @Query によるDB問い合わせ
+Database
+  ↓ 条件に一致したタスク一覧
 tasks.html
 ```
 
@@ -429,9 +450,14 @@ mvnw.cmd spring-boot:run
 http://localhost:8080/
 ```
 
-## データベース（H2）
+## データベース
 
-開発用に H2 Database を使用しています。
+このアプリでは、開発用DBとして H2 Database を使用できます。  
+また、PostgreSQL用プロファイルを用意しており、ローカルのPostgreSQLでも動作確認できます。
+
+### H2 Database
+
+通常起動時は、H2 Database を使用します。
 
 ### H2コンソール
 
@@ -444,6 +470,22 @@ http://localhost:8080/h2-console
 - JDBC URL: `jdbc:h2:./data/taskdb`
 - User: `sa`
 - Password: （空）
+
+### PostgreSQL
+
+PostgreSQLで起動する場合は、postgres プロファイルを指定します。  
+
+事前に、PostgreSQL側で tasklist データベースを作成しておきます。  
+
+```bash
+CREATE DATABASE tasklist;
+```
+
+PostgreSQLプロファイルで起動します。  
+
+```bash
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=postgres"
+```
 
 ## テスト実行方法
 
@@ -518,18 +560,23 @@ spring.datasource.url=jdbc:h2:./data/taskdb
 
 Entityのフィールドを変更したあとにDB構造との不整合が起きた場合、開発初期であれば `data` ディレクトリを削除してDBを作り直すことがあります。
 
-また、現在の検索・絞り込み・並び替え機能は、DBから全件取得したあとにJava側で処理しています。  
+検索・絞り込み・並び替えは、Repository / DB側で行う構成にしています。
+
+完了状態の絞り込みやキーワード検索は、Spring Data JPAのメソッド名クエリを使っています。    
+また、期限順や優先度順のように少し複雑な並び替えは、`@Query` を使ってJPQLで明示しています。  
+
+開発中にEntityのフィールドを変更した場合、既存のH2 Databaseに古いテーブル構造が残っているとエラーになることがあります。  
+その場合、開発初期であれば `data` ディレクトリを削除してDBを作り直すことがあります。  
 
 ## 今後の改善予定
 
-- RepositoryやDB側での検索・絞り込み・並び替え
 - PostgreSQL環境での動作確認強化
 - テストコードの拡充
   - Repository層のテスト
   - Formバリデーションのテスト
 - 画面デザインの改善
-  - カード型レイアウト
-  - Microsoft To Do のような見やすいタスク表示
+  - 見やすいカード型レイアウト
+  - スマートフォンでも見やすいレスポンシブ対応
 - デプロイ準備
   - 本番用プロファイルの整理
   - 環境変数による設定管理
@@ -551,13 +598,14 @@ Entityのフィールドを変更したあとにDB構造との不整合が起き
   - Delete: タスク削除
 - `LocalDate` を使った期限日の管理
 - `enum` を使った優先度・表示条件・並び替え条件の管理
-- `Comparator` を使ったJava側での並び替え
-- Java側でのキーワード検索・絞り込み
 - H2 Databaseを使った開発用DBの利用
+- PostgreSQLプロファイルを使ったDB切り替え
+- Spring Data JPAのメソッド名クエリによる検索・絞り込み
+- `@Query` とJPQLによる複雑な並び替え
+- DB側での検索・絞り込み・並び替え
+- `ORDER BY CASE` を使った期限なし・優先度順の制御
 - JUnit / Mockito を使った単体テスト
 - MockMvc を使ったController層のテスト
 - ServiceをモックにしたWeb層のテスト
 - Cookieを使った匿名ユーザー識別
 - ownerIdによるブラウザごとのタスク分離
-- PostgreSQLプロファイルを使ったDB切り替え
-- 環境変数を使ったDB接続情報の管理
