@@ -102,7 +102,7 @@
                 method="get" にすることで、選択した条件がURLのクエリパラメータとして送信されます。
                 例: /tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring
             -->
-            <form class="form-grid" th:action="@{/tasklist}" method="get">
+            <form class="form-grid remember-scroll-form" th:action="@{/tasklist}" method="get">
                 <div class="form-field">
                     <label for="filter">表示</label>
         
@@ -151,7 +151,7 @@
         
                 <div class="form-actions">
                     <button class="primary-button" type="submit">変更</button>
-                    <a class="button-link" th:href="@{/tasklist}">リセット</a>
+                    <a class="button-link remember-scroll-link" th:href="@{/tasklist}">リセット</a>
                 </div>
             </form>
         </section>
@@ -222,9 +222,9 @@
                         タスクを削除するフォームです。
                         現在の表示条件をhiddenで送ることで、削除後も同じ条件の一覧へ戻ります。
                     -->
-                    <form class="inline-form"
-                        th:action="@{/tasklist/tasks/{id}/delete(id=${task.id})}"
-                        method="post">
+                    <form class="inline-form remember-scroll-form"
+                          th:action="@{/tasklist/tasks/{id}/delete(id=${task.id})}"
+                          method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
                         <input type="hidden" name="keyword" th:value="${keyword}">
@@ -238,10 +238,10 @@
 
 <script>
     /*
-     * 完了切り替え後に、画面のスクロール位置を復元します。
+     * フォーム送信やリンク移動後に、画面のスクロール位置を復元します。
      *
-     * 完了ボタンを押すと、フォーム送信によりページ全体が再表示されます。
-     * そのままだと画面上部に戻ってしまうため、送信前のスクロール位置を
+     * 完了切り替え、削除、表示条件変更などではページ全体が再表示されます。
+     * そのままだと画面上部に戻ってしまうため、操作前のスクロール位置を
      * sessionStorageに保存し、再表示後に同じ位置へ戻します。
      */
     document.addEventListener("DOMContentLoaded", function () {
@@ -254,10 +254,23 @@
 
         document.querySelectorAll(".remember-scroll-form").forEach(function (form) {
             form.addEventListener("submit", function () {
-                sessionStorage.setItem("tasklistScrollY", window.scrollY);
+                saveScrollPosition();
+            });
+        });
+
+        document.querySelectorAll(".remember-scroll-link").forEach(function (link) {
+            link.addEventListener("click", function () {
+                saveScrollPosition();
             });
         });
     });
+
+    /*
+     * 現在のスクロール位置をsessionStorageに保存します。
+     */
+    function saveScrollPosition() {
+        sessionStorage.setItem("tasklistScrollY", window.scrollY);
+    }
 </script>
 
 </body>
