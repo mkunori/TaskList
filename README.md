@@ -221,7 +221,7 @@ sequenceDiagram
         Database-->>TaskRepository: 保存完了
         TaskRepository-->>TaskService: 保存済みTask
         TaskService-->>TaskController: 保存完了
-        TaskController-->>Browser: 条件を維持して redirect:/
+        TaskController-->>Browser: 条件を維持して redirect:/tasklist
         Browser-->>User: 一覧画面を再表示
     end
 ```
@@ -258,7 +258,7 @@ sequenceDiagram
         Database-->>TaskRepository: 更新完了
         TaskRepository-->>TaskService: 更新済みTask
         TaskService-->>TaskController: 更新結果
-        TaskController-->>Browser: 条件を維持して redirect:/
+        TaskController-->>Browser: 条件を維持して redirect:/tasklist
         Browser-->>User: 一覧画面を再表示
     end
 ```
