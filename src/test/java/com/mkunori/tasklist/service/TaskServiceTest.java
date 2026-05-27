@@ -241,7 +241,8 @@ class TaskServiceTest {
         Task high = createTask(2L, "高い優先度", false, null, Priority.HIGH);
         Task medium = createTask(3L, "普通の優先度", false, null, Priority.MEDIUM);
 
-        when(taskRepository.findByOwnerId(TEST_OWNER_ID)).thenReturn(List.of(low, high, medium));
+        when(taskRepository.findByOwnerIdOrderByPriorityHighFirst(TEST_OWNER_ID))
+                .thenReturn(List.of(high, medium, low));
 
         List<Task> actual = taskService.findTasks(
                 TEST_OWNER_ID,
@@ -252,6 +253,56 @@ class TaskServiceTest {
         assertEquals("高い優先度", actual.get(0).getTitle());
         assertEquals("普通の優先度", actual.get(1).getTitle());
         assertEquals("低い優先度", actual.get(2).getTitle());
+    }
+
+    /**
+     * 表示条件がACTIVEで優先度順の場合、
+     * 未完了タスクが優先度の高い順で取得されることを確認します。
+     */
+    @Test
+    void findTasks_activeAndPrioritySort_returnsUndoneTasksOrderByPriority() {
+        Task high = createTask(1L, "高い未完了タスク", false, null, Priority.HIGH);
+        Task low = createTask(2L, "低い未完了タスク", false, null, Priority.LOW);
+
+        when(taskRepository.findByOwnerIdAndDoneOrderByPriorityHighFirst(
+                TEST_OWNER_ID,
+                false))
+                .thenReturn(List.of(high, low));
+
+        List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
+                TaskFilterType.ACTIVE,
+                TaskSortType.PRIORITY,
+                "");
+
+        assertEquals(2, actual.size());
+        assertEquals("高い未完了タスク", actual.get(0).getTitle());
+        assertEquals("低い未完了タスク", actual.get(1).getTitle());
+    }
+
+    /**
+     * キーワードありで優先度順の場合、
+     * タイトルにキーワードを含むタスクが優先度の高い順で取得されることを確認します。
+     */
+    @Test
+    void findTasks_keywordAndPrioritySort_returnsMatchedTasksOrderByPriority() {
+        Task high = createTask(1L, "Spring Bootを学ぶ", false, null, Priority.HIGH);
+        Task medium = createTask(2L, "Spring JPA確認", false, null, Priority.MEDIUM);
+
+        when(taskRepository.findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+                TEST_OWNER_ID,
+                "Spring"))
+                .thenReturn(List.of(high, medium));
+
+        List<Task> actual = taskService.findTasks(
+                TEST_OWNER_ID,
+                TaskFilterType.ALL,
+                TaskSortType.PRIORITY,
+                "Spring");
+
+        assertEquals(2, actual.size());
+        assertEquals("Spring Bootを学ぶ", actual.get(0).getTitle());
+        assertEquals("Spring JPA確認", actual.get(1).getTitle());
     }
 
     /**

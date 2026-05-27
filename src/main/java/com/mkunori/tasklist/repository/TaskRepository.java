@@ -219,4 +219,119 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("ownerId") String ownerId,
             @Param("done") boolean done,
             @Param("keyword") String keyword);
+    
+    /**
+     * 指定された匿名ユーザーIDに紐づくタスクを、優先度が高い順で取得します。
+     *
+     * HIGH、MEDIUM、LOW の順で表示します。
+     * 優先度が未設定のタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @return 優先度が高い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            ORDER BY
+                CASE task.priority
+                    WHEN com.mkunori.tasklist.entity.Priority.HIGH THEN 1
+                    WHEN com.mkunori.tasklist.entity.Priority.MEDIUM THEN 2
+                    WHEN com.mkunori.tasklist.entity.Priority.LOW THEN 3
+                    ELSE 4
+                END,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdOrderByPriorityHighFirst(
+            @Param("ownerId") String ownerId);
+    
+    /**
+     * 指定された匿名ユーザーIDと完了状態に一致するタスクを、
+     * 優先度が高い順で取得します。
+     *
+     * HIGH、MEDIUM、LOW の順で表示します。
+     * 優先度が未設定のタスクは最後に表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @return 優先度が高い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            AND task.done = :done
+            ORDER BY
+                CASE task.priority
+                    WHEN com.mkunori.tasklist.entity.Priority.HIGH THEN 1
+                    WHEN com.mkunori.tasklist.entity.Priority.MEDIUM THEN 2
+                    WHEN com.mkunori.tasklist.entity.Priority.LOW THEN 3
+                    ELSE 4
+                END,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdAndDoneOrderByPriorityHighFirst(
+            @Param("ownerId") String ownerId,
+            @Param("done") boolean done);
+    
+    /**
+     * 指定された匿名ユーザーID、完了状態に一致し、
+     * タイトルにキーワードを含むタスクを、優先度が高い順で取得します。
+     *
+     * 大文字小文字を区別せずに検索します。
+     * HIGH、MEDIUM、LOW の順で表示します。
+     *
+     * @param ownerId 匿名ユーザーID
+     * @param done 完了状態。trueなら完了済み、falseなら未完了
+     * @param keyword 検索キーワード
+     * @return 優先度が高い順のタスク一覧
+     */
+    @Query("""
+            SELECT task
+            FROM Task task
+            WHERE task.ownerId = :ownerId
+            AND task.done = :done
+            AND LOWER(task.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            ORDER BY
+                CASE task.priority
+                    WHEN com.mkunori.tasklist.entity.Priority.HIGH THEN 1
+                    WHEN com.mkunori.tasklist.entity.Priority.MEDIUM THEN 2
+                    WHEN com.mkunori.tasklist.entity.Priority.LOW THEN 3
+                    ELSE 4
+                END,
+                task.id ASC
+            """)
+    List<Task> findByOwnerIdAndDoneAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+            @Param("ownerId") String ownerId,
+            @Param("done") boolean done,
+            @Param("keyword") String keyword);
+
+        /**
+         * 指定された匿名ユーザーIDに紐づき、タイトルにキーワードを含むタスクを、
+         * 優先度が高い順で取得します。
+         *
+         * 大文字小文字を区別せずに検索します。
+         * HIGH、MEDIUM、LOW の順で表示します。
+         *
+         * @param ownerId 匿名ユーザーID
+         * @param keyword 検索キーワード
+         * @return 優先度が高い順のタスク一覧
+         */
+        @Query("""
+                SELECT task
+                FROM Task task
+                WHERE task.ownerId = :ownerId
+                AND LOWER(task.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                ORDER BY
+                CASE task.priority
+                        WHEN com.mkunori.tasklist.entity.Priority.HIGH THEN 1
+                        WHEN com.mkunori.tasklist.entity.Priority.MEDIUM THEN 2
+                        WHEN com.mkunori.tasklist.entity.Priority.LOW THEN 3
+                        ELSE 4
+                END,
+                task.id ASC
+                """)
+        List<Task> findByOwnerIdAndTitleContainingIgnoreCaseOrderByPriorityHighFirst(
+                @Param("ownerId") String ownerId,
+                @Param("keyword") String keyword);
 }
