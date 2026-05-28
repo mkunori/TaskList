@@ -41,7 +41,7 @@
                 タスク追加フォームです。
                 th:object="${taskForm}" は、Controllerから渡されたTaskFormと対応します。
             -->
-            <form class="form-grid" th:action="@{/tasklist/tasks}" th:object="${taskForm}" method="post">
+            <form class="form-grid" th:action="@{/tasks}" th:object="${taskForm}" method="post">
                 <div class="form-field">
                     <label for="title">タイトル</label>
                     <input type="text" id="title" th:field="*{title}">
@@ -86,7 +86,7 @@
                 表示条件、並び替え条件、検索キーワードを指定するフォームです。
                 remember-scroll-form により、条件変更後もスクロール位置を復元します。
             -->
-            <form class="form-grid remember-scroll-form" th:action="@{/tasklist}" method="get">
+            <form class="form-grid remember-scroll-form" th:action="@{/}" method="get">
                 <div class="form-field">
                     <label for="filter">表示</label>
 
@@ -116,7 +116,7 @@
                 <div class="form-actions">
                     <button class="primary-button" type="submit">変更</button>
 
-                    <a class="button-link remember-scroll-link" th:href="@{/tasklist}">
+                    <a class="button-link remember-scroll-link" th:href="@{/}">
                         リセット
                     </a>
                 </div>
@@ -151,8 +151,8 @@
                         完了状態を切り替えるフォームです。
                         現在の表示条件をhiddenで送ることで、操作後も同じ条件の一覧へ戻ります。
                     -->
-                    <form class="inline-form remember-scroll-form"
-                        th:action="@{/tasklist/tasks/{id}/toggle(id=${task.id})}" method="post">
+                    <form class="inline-form remember-scroll-form" th:action="@{/tasks/{id}/toggle(id=${task.id})}"
+                        method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
                         <input type="hidden" name="keyword" th:value="${keyword}">
@@ -166,12 +166,12 @@
                         編集画面へのリンクです。
                         現在の表示条件をクエリパラメータとして渡します。
                     -->
-                    <a class="button-link" th:href="@{/tasklist/tasks/{id}/edit(
-                           id=${task.id},
-                           filter=${selectedFilter},
-                           sort=${selectedSort},
-                           keyword=${keyword}
-                       )}">
+                    <a class="button-link" th:href="@{/tasks/{id}/edit(
+                            id=${task.id},
+                            filter=${selectedFilter},
+                            sort=${selectedSort},
+                            keyword=${keyword}
+                        )}">
                         編集
                     </a>
 
@@ -179,8 +179,8 @@
                         タスクを削除するフォームです。
                         現在の表示条件をhiddenで送ることで、削除後も同じ条件の一覧へ戻ります。
                     -->
-                    <form class="inline-form remember-scroll-form"
-                        th:action="@{/tasklist/tasks/{id}/delete(id=${task.id})}" method="post">
+                    <form class="inline-form remember-scroll-form" th:action="@{/tasks/{id}/delete(id=${task.id})}"
+                        method="post">
                         <input type="hidden" name="filter" th:value="${selectedFilter}">
                         <input type="hidden" name="sort" th:value="${selectedSort}">
                         <input type="hidden" name="keyword" th:value="${keyword}">
