@@ -90,7 +90,7 @@ class TaskControllerTest {
                                 TaskSortType.CREATED,
                                 "")).thenReturn(List.of(task));
 
-                mockMvc.perform(get("/tasklist"))
+                mockMvc.perform(get("/"))
                                 .andExpect(status().isOk())
                                 .andExpect(view().name("tasks"))
                                 .andExpect(model().attributeExists("tasks"))
@@ -118,7 +118,7 @@ class TaskControllerTest {
                 when(anonymousUserService.getOrCreateOwnerId(any(), any()))
                                 .thenReturn(TEST_OWNER_ID);
 
-                mockMvc.perform(post("/tasklist/tasks")
+                mockMvc.perform(post("/tasks")
                                 .param("title", "新しいタスク")
                                 .param("dueDate", "2026-05-10")
                                 .param("priority", "HIGH")
@@ -126,7 +126,7 @@ class TaskControllerTest {
                                 .param("sort", "CREATED")
                                 .param("keyword", ""))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrlPattern("/tasklist?filter=ALL&sort=CREATED&keyword=*"));
+                                .andExpect(redirectedUrlPattern("/?filter=ALL&sort=CREATED&keyword=*"));
 
                 verify(taskService).addTask(
                                 eq("新しいタスク"),
@@ -150,7 +150,7 @@ class TaskControllerTest {
                                 TaskSortType.CREATED,
                                 "")).thenReturn(List.of());
 
-                mockMvc.perform(post("/tasklist/tasks")
+                mockMvc.perform(post("/tasks")
                                 .param("title", "")
                                 .param("dueDate", "2026-05-10")
                                 .param("priority", "HIGH")
@@ -193,7 +193,7 @@ class TaskControllerTest {
                 when(taskService.findUpdateFormById(1L, TEST_OWNER_ID))
                                 .thenReturn(Optional.of(form));
 
-                mockMvc.perform(get("/tasklist/tasks/1/edit")
+                mockMvc.perform(get("/tasks/1/edit")
                                 .param("filter", "ACTIVE")
                                 .param("sort", "DUE_DATE")
                                 .param("keyword", "Spring"))
@@ -223,13 +223,13 @@ class TaskControllerTest {
                 when(taskService.findUpdateFormById(999L, TEST_OWNER_ID))
                                 .thenReturn(Optional.empty());
 
-                mockMvc.perform(get("/tasklist/tasks/999/edit")
+                mockMvc.perform(get("/tasks/999/edit")
                                 .param("filter", "ACTIVE")
                                 .param("sort", "DUE_DATE")
                                 .param("keyword", "Spring"))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrlPattern(
-                                                "/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
+                                                "/?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
 
                 verify(anonymousUserService).getOrCreateOwnerId(any(), any());
                 verify(taskService).findUpdateFormById(999L, TEST_OWNER_ID);
@@ -247,7 +247,7 @@ class TaskControllerTest {
                 when(taskService.updateTask(any(TaskUpdateForm.class), eq(TEST_OWNER_ID)))
                                 .thenReturn(true);
 
-                mockMvc.perform(post("/tasklist/tasks/1/update")
+                mockMvc.perform(post("/tasks/1/update")
                                 .param("id", "1")
                                 .param("title", "更新後タスク")
                                 .param("dueDate", "2026-05-12")
@@ -257,7 +257,7 @@ class TaskControllerTest {
                                 .param("keyword", "Spring"))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrlPattern(
-                                                "/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
+                                                "/?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
 
                 verify(taskService).updateTask(any(TaskUpdateForm.class), eq(TEST_OWNER_ID));
         }
@@ -273,7 +273,7 @@ class TaskControllerTest {
                 when(anonymousUserService.getOrCreateOwnerId(any(), any()))
                                 .thenReturn(TEST_OWNER_ID);
 
-                mockMvc.perform(post("/tasklist/tasks/1/update")
+                mockMvc.perform(post("/tasks/1/update")
                                 .param("id", "1")
                                 .param("title", "")
                                 .param("dueDate", "2026-05-12")
@@ -301,13 +301,13 @@ class TaskControllerTest {
                 when(anonymousUserService.getOrCreateOwnerId(any(), any()))
                                 .thenReturn(TEST_OWNER_ID);
 
-                mockMvc.perform(post("/tasklist/tasks/1/toggle")
+                mockMvc.perform(post("/tasks/1/toggle")
                                 .param("filter", "ACTIVE")
                                 .param("sort", "DUE_DATE")
                                 .param("keyword", "Spring"))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrlPattern(
-                                                "/tasklist?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
+                                                "/?filter=ACTIVE&sort=DUE_DATE&keyword=Spring*"));
 
                 verify(taskService).toggleTaskDone(1L, TEST_OWNER_ID);
         }
@@ -321,12 +321,12 @@ class TaskControllerTest {
                 when(anonymousUserService.getOrCreateOwnerId(any(), any()))
                                 .thenReturn(TEST_OWNER_ID);
 
-                mockMvc.perform(post("/tasklist/tasks/1/delete")
+                mockMvc.perform(post("/tasks/1/delete")
                                 .param("filter", "DONE")
                                 .param("sort", "PRIORITY")
                                 .param("keyword", "Java"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrlPattern("/tasklist?filter=DONE&sort=PRIORITY&keyword=Java*"));
+                                .andExpect(redirectedUrlPattern("/?filter=DONE&sort=PRIORITY&keyword=Java*"));
 
                 verify(taskService).deleteTask(1L, TEST_OWNER_ID);
         }
